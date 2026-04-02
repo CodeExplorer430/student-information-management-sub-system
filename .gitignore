@@ -6,6 +6,9 @@
 /storage/database/*.sqlite
 /storage/framework/cache/*
 /storage/framework/sessions/*
+/storage/framework/test-flash-sessions/*
+/storage/framework/test-sessions/*
+/storage/framework/test-sessions-none-*/
 /storage/app/private/uploads/*
 /storage/app/public/id-cards/*
 /storage/backups/*
