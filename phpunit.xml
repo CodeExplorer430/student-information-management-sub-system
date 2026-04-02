@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php" colors="true" cacheDirectory=".phpunit.cache">
+    <source>
+        <include>
+            <directory suffix=".php">app</directory>
+            <directory suffix=".php">public</directory>
+            <file>bin/console</file>
+        </include>
+        <exclude>
+            <directory suffix=".php">tests</directory>
+        </exclude>
+    </source>
+    <coverage pathCoverage="false" includeUncoveredFiles="true"/>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

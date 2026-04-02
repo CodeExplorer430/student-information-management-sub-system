@@ -1,0 +1,44 @@
+1. Student Information Management Sub-system
+Purpose:
+Handles all core data about students. Ensure information is accurate, complete, and accessible to authorized personnel.
+
+Module Explanation:
+1. Student Profile Registration
+- Records initial student information during admission (name, birthdate, contact, program).
+- Creates the student's unique Student Number.
+2. Student Personal Information Update
+- Allows students or admin staff to update personal details (address, contacts, guardian).
+- Ensure any changes are tracked.
+3. Academic Records Viewer
+- Stores and displays historical academic data (enrolled subjects, grades).
+- Accessible to registrar and authorized faculty.
+4. Student ID Generation
+- Produces the student's official school ID (digital or printed).
+- Linked to barcode/QR for attendance or record checks
+5. Student Status Tracking
+- Monitors whether a student is Active, Dropped, Graduated, or On Leave.
+- Important for enrollment eligibility.
+
+Tech Stack:
+1. Core Backend (The "Engine")
+    Language: PHP 8.2+ (Use declare(strict_types=1); in every file).
+    Web Server: Apache (via XAMPP).
+    Database: MariaDB/MySQL (using PDO for all queries—no mysqli).
+    Routing: AltoRouter (to handle clean URLs like /student/profile/101).
+    Templating: Twig (to keep HTML separate from PHP logic).
+    Environment: phpdotenv (to store DB credentials securely in a .env file).
+2. Frontend (The "UI")
+    Styling: Bootstrap 5 (The classic, stable choice for admin dashboards).
+    Interactivity: Vanilla JS or jQuery (for AJAX requests when updating student records).
+    Icons: FontAwesome or Bootstrap Icons.
+    ID Assets: GD Library (built into PHP) for generating ID cards and php-qrcode for the student QR codes.
+3. Code Quality & Standards (The "Enforcers")
+    Package Manager: Composer (to manage all libraries and autoloading).
+    Autoloading: PSR-4 standard (via Composer) so you never have to manually include files.
+    Static Analysis: PHPStan (to catch logic errors without running the code).
+    Code Formatter: PHP CS Fixer (ensures your code follows PSR-12 standards).
+    Error Handling: Whoops (for detailed error reporting during development).
+4. Testing & Security (The "Safety Net")
+    Unit Testing: PHPUnit (The classic standard).
+    Integration Testing: Codeception (Excellent for testing form submissions like "Student Registration").
+    Security: Roave Security Advisories (Ensures your dependencies have no known vulnerabilities).

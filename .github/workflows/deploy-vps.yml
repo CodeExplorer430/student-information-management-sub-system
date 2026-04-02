@@ -1,0 +1,222 @@
+name: Deploy VPS
+
+on:
+    push:
+        branches:
+            - develop
+        tags:
+            - 'v*'
+    workflow_dispatch:
+        inputs:
+            environment:
+                description: GitHub environment to deploy
+                required: true
+                default: staging
+                type: choice
+                options:
+                    - staging
+                    - production
+            deploy_ref:
+                description: Branch, tag, or SHA to deploy
+                required: true
+                default: develop
+                type: string
+            keep_releases:
+                description: Number of releases to retain on the server
+                required: false
+                default: '5'
+                type: string
+            push_remote_backup:
+                description: Export and push the backup to remote storage
+                required: false
+                default: false
+                type: boolean
+
+jobs:
+    resolve:
+        runs-on: ubuntu-latest
+        outputs:
+            deploy_environment: ${{ steps.resolve.outputs.deploy_environment }}
+            deploy_ref: ${{ steps.resolve.outputs.deploy_ref }}
+            keep_releases: ${{ steps.resolve.outputs.keep_releases }}
+            push_remote_backup: ${{ steps.resolve.outputs.push_remote_backup }}
+
+        steps:
+            - name: Resolve deployment context
+              id: resolve
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == "refs/heads/develop" ]]; then
+                      echo "deploy_environment=staging" >> "${GITHUB_OUTPUT}"
+                      echo "deploy_ref=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+                      echo "keep_releases=5" >> "${GITHUB_OUTPUT}"
+                      echo "push_remote_backup=false" >> "${GITHUB_OUTPUT}"
+                      exit 0
+                  fi
+
+                  if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+                      echo "deploy_environment=production" >> "${GITHUB_OUTPUT}"
+                      echo "deploy_ref=${GITHUB_REF_NAME}" >> "${GITHUB_OUTPUT}"
+                      echo "keep_releases=5" >> "${GITHUB_OUTPUT}"
+                      echo "push_remote_backup=false" >> "${GITHUB_OUTPUT}"
+                      exit 0
+                  fi
+
+                  echo "deploy_environment=${{ inputs.environment }}" >> "${GITHUB_OUTPUT}"
+                  echo "deploy_ref=${{ inputs.deploy_ref }}" >> "${GITHUB_OUTPUT}"
+                  echo "keep_releases=${{ inputs.keep_releases }}" >> "${GITHUB_OUTPUT}"
+                  echo "push_remote_backup=${{ inputs.push_remote_backup }}" >> "${GITHUB_OUTPUT}"
+
+    deploy:
+        needs: resolve
+        runs-on: ubuntu-latest
+        environment: ${{ needs.resolve.outputs.deploy_environment }}
+        concurrency:
+            group: deploy-${{ needs.resolve.outputs.deploy_environment }}
+            cancel-in-progress: false
+        permissions:
+            contents: read
+        env:
+            DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+            DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+            DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+            DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+            DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+            APP_URL: ${{ vars.APP_URL }}
+            DEPLOY_PHP_BIN: ${{ vars.DEPLOY_PHP_BIN }}
+            DEPLOY_COMPOSER_BIN: ${{ vars.DEPLOY_COMPOSER_BIN }}
+            DEPLOY_KEEP_RELEASES: ${{ vars.DEPLOY_KEEP_RELEASES }}
+            DEPLOY_SMOKE_ADMIN_EMAIL: ${{ secrets.DEPLOY_SMOKE_ADMIN_EMAIL }}
+            DEPLOY_SMOKE_ADMIN_PASSWORD: ${{ secrets.DEPLOY_SMOKE_ADMIN_PASSWORD }}
+            DEPLOY_SMOKE_STUDENT_EMAIL: ${{ secrets.DEPLOY_SMOKE_STUDENT_EMAIL }}
+            DEPLOY_SMOKE_STUDENT_PASSWORD: ${{ secrets.DEPLOY_SMOKE_STUDENT_PASSWORD }}
+
+        steps:
+            - name: Checkout deployment ref
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ needs.resolve.outputs.deploy_ref }}
+
+            - name: Run strict quality gate in validator
+              run: bash scripts/run-validator.sh composer check
+
+            - name: Set up PHP for smoke validation
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  coverage: none
+                  tools: composer:v2
+                  extensions: curl, dom, gd, mbstring, pdo, pdo_mysql, sqlite3
+
+            - name: Install dev dependencies for smoke suite
+              run: composer install --no-interaction --prefer-dist
+
+            - name: Build Codeception actor
+              run: composer codecept:build
+
+            - name: Resolve deploy settings
+              id: deploy-settings
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  if [[ -z "${DEPLOY_HOST}" || -z "${DEPLOY_USER}" || -z "${DEPLOY_PATH}" || -z "${APP_URL}" ]]; then
+                      echo "Missing one of DEPLOY_HOST, DEPLOY_USER, DEPLOY_PATH, or APP_URL." >&2
+                      exit 1
+                  fi
+
+                  PORT="${DEPLOY_PORT:-22}"
+                  PHP_BIN="${DEPLOY_PHP_BIN:-php}"
+                  COMPOSER_BIN="${DEPLOY_COMPOSER_BIN:-composer}"
+                  KEEP_RELEASES="${{ needs.resolve.outputs.keep_releases }}"
+
+                  if [[ -z "${KEEP_RELEASES}" ]]; then
+                      KEEP_RELEASES="${DEPLOY_KEEP_RELEASES:-5}"
+                  fi
+
+                  RELEASE_NAME="$(date -u +'%Y%m%d%H%M%S')-${GITHUB_SHA}"
+
+                  echo "deploy_port=${PORT}" >> "${GITHUB_OUTPUT}"
+                  echo "php_bin=${PHP_BIN}" >> "${GITHUB_OUTPUT}"
+                  echo "composer_bin=${COMPOSER_BIN}" >> "${GITHUB_OUTPUT}"
+                  echo "keep_releases=${KEEP_RELEASES}" >> "${GITHUB_OUTPUT}"
+                  echo "release_name=${RELEASE_NAME}" >> "${GITHUB_OUTPUT}"
+                  echo "archive_name=${RELEASE_NAME}.tar.gz" >> "${GITHUB_OUTPUT}"
+
+            - name: Package release archive
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  tar \
+                      --exclude=.git \
+                      --exclude=.github \
+                      --exclude=build \
+                      --exclude=docs \
+                      --exclude=tests \
+                      --exclude=vendor \
+                      --exclude=.env \
+                      -czf "${{ steps.deploy-settings.outputs.archive_name }}" \
+                      .
+
+            - name: Start SSH agent
+              uses: webfactory/ssh-agent@v0.9.0
+              with:
+                  ssh-private-key: ${{ env.DEPLOY_SSH_PRIVATE_KEY }}
+
+            - name: Trust deploy host
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  mkdir -p ~/.ssh
+                  ssh-keyscan -p "${{ steps.deploy-settings.outputs.deploy_port }}" -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
+
+            - name: Upload release archive
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  REMOTE_TMP="/tmp/${{ steps.deploy-settings.outputs.archive_name }}"
+
+                  ssh -p "${{ steps.deploy-settings.outputs.deploy_port }}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+                      "mkdir -p '${DEPLOY_PATH}/releases'"
+
+                  scp -P "${{ steps.deploy-settings.outputs.deploy_port }}" \
+                      "${{ steps.deploy-settings.outputs.archive_name }}" \
+                      "${DEPLOY_USER}@${DEPLOY_HOST}:${REMOTE_TMP}"
+
+            - name: Deploy release on server
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  REMOTE_TMP="/tmp/${{ steps.deploy-settings.outputs.archive_name }}"
+                  REMOTE_RELEASE_DIR="${DEPLOY_PATH}/releases/${{ steps.deploy-settings.outputs.release_name }}"
+                  PUSH_REMOTE_FLAG=""
+
+                  if [[ "${{ needs.resolve.outputs.push_remote_backup }}" == "true" ]]; then
+                      PUSH_REMOTE_FLAG="--push-remote"
+                  fi
+
+                  ssh -p "${{ steps.deploy-settings.outputs.deploy_port }}" "${DEPLOY_USER}@${DEPLOY_HOST}" "
+                      set -euo pipefail
+                      mkdir -p '${REMOTE_RELEASE_DIR}'
+                      tar -xzf '${REMOTE_TMP}' -C '${REMOTE_RELEASE_DIR}'
+                      rm -f '${REMOTE_TMP}'
+                      cd '${REMOTE_RELEASE_DIR}'
+                      bash scripts/deploy-vps.sh \
+                          --app-root='${DEPLOY_PATH}' \
+                          --release-dir='${REMOTE_RELEASE_DIR}' \
+                          --public-url='${APP_URL}' \
+                          --php-bin='${{ steps.deploy-settings.outputs.php_bin }}' \
+                          --composer-bin='${{ steps.deploy-settings.outputs.composer_bin }}' \
+                          --keep-releases='${{ steps.deploy-settings.outputs.keep_releases }}' \
+                          ${PUSH_REMOTE_FLAG}
+                  "
+
+            - name: Run deployed-environment smoke checks
+              env:
+                  DEPLOY_SMOKE_BASE_URL: ${{ env.APP_URL }}
+              run: bash scripts/deployment-smoke.sh

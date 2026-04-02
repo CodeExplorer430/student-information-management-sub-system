@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a defect or regression in the application or delivery flow.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the defect and the user or operator impact.
+      placeholder: The dashboard fails to load after profile updates...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide the shortest reliable reproduction flow.
+      placeholder: |
+        1. Log in as...
+        2. Open...
+        3. Submit...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Explain what should have happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include branch, deployment URL, browser, PHP version, or
+        any other relevant runtime details.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Paste logs, screenshots, request IDs, or console output.

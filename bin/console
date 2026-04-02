@@ -1,0 +1,28 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use App\Core\Application;
+use App\Console\ConsoleKernel;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+/** @var Application $app */
+$app = require dirname(__DIR__) . '/config/app.php';
+
+$result = (new ConsoleKernel($app))->handle($argv[1] ?? null, array_slice($argv, 2));
+
+$stdout = $GLOBALS['__sims_stdout'] ?? STDOUT;
+$stderr = $GLOBALS['__sims_stderr'] ?? STDERR;
+
+fwrite($stdout, $result->stdout());
+fwrite($stderr, $result->stderr());
+
+if (($GLOBALS['__sims_disable_exit'] ?? false) === true) {
+    return $result->exitCode();
+}
+
+$__sims_exit_code = $result->exitCode();
+
+require dirname(__DIR__) . '/config/console_exit.php';

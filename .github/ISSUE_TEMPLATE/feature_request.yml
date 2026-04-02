@@ -1,0 +1,31 @@
+name: Feature request
+description: Propose a product, workflow, documentation, or automation change.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+      description: Describe the current gap and who it affects.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the desired behavior or outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List the conditions that would make this request done.
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: Note technical, operational, security, or timeline
+        constraints that should shape the implementation.

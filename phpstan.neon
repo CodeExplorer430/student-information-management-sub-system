@@ -1,0 +1,45 @@
+parameters:
+    level: max
+    paths:
+        - app
+        - config
+        - public
+        - tests
+    excludePaths:
+        - tests/_output
+    stubFiles:
+        - tests/Support/phpstan-stubs/CodeceptionStep.stub
+    typeAliases:
+        AcademicRecordRow: 'array{id:int, student_id:int, term_label:string, subject_code:string, subject_title:string, units:int|float|string, grade:string, created_at:string, student_number?:string, first_name?:string, last_name?:string, department?:string}'
+        AppViewData: 'array{name:string, user:UserRow|null, url:string, permissions:list<string>, notification_unread_count:int}'
+        AuditLogRow: 'array{id:int, user_id:int|null, entity_type:string, entity_id:int, action:string, old_values:string|null, new_values:string|null, created_at:string}'
+        DashboardOverview: 'array{role:string, studentCount:int, userCount:int, workflowStatusCounts:array<string, int>, enrollmentStatusCounts:array<string, int>, recentStudents:list<RecentStudentRow>, recentActivity:list<AuditLogRow&array{actor_name?: string|null}>, requestStatusCounts:array<string, int>, overdueRequestCount:int, notificationUnreadCount:int, notificationDeliverySummary:list<DeliverySummaryRow>, recentRequests:list<RequestRow>, roleOverview:list<RoleRow>, studentRecord:StudentRow|null, profileCompleteness:int|null, idAvailable:bool}'
+        DeliverySummaryRow: 'array{channel:string, status:string, total:int|string}'
+        EnrollmentStatusHistoryRow: 'array{id:int, student_id:int, status:string, remarks:string, assigned_user_id:int|null, created_at:string, assigned_personnel?:string|null}'
+        FlashMessage: 'array{type:string, message:string}'
+        HealthCheck: 'array{name:string, status:string, message:string}'
+        HealthReport: 'array{status:string, timestamp:string, request_id:string, checks:list<HealthCheck>, version:string|null}'
+        IdCardRow: 'array{student_id:int, file_path:string, qr_payload:string, barcode_payload:string, generated_by:int|null, generated_at:string, image_data?:string}'
+        LogEntry: 'array{timestamp:string, level:string, channel:string, request_id:string, message:string, context:array<string, mixed>}'
+        NotificationDeliverySearchRow: 'array{id:int, notification_id:int, channel:string, recipient:string, status:string, error_message:string|null, delivered_at:string|null, created_at:string, title:string, user_id:int, user_name:string}'
+        NotificationDeliveryRow: 'array{id:int, notification_id:int, channel:string, recipient:string, status:string, error_message:string|null, delivered_at:string|null, created_at:string}'
+        NotificationRow: 'array{id:int, user_id:int, entity_type:string, entity_id:int, title:string, message:string, is_read:int, created_at:string, deliveries:list<NotificationDeliveryRow>}'
+        PermissionRow: 'array{id:int, code:string, label:string, module:string, description:string, created_at:string, updated_at:string}'
+        ReportOverview: 'array{studentCount:int, userCount:int, workflowStatusCounts:array<string, int>, enrollmentStatusCounts:array<string, int>, requestStatusCounts:array<string, int>, overdueRequestCount:int, roleOverview:list<RoleRow>, recentActivity:list<AuditLogRow&array{actor_name?: string|null}>, deliverySummary:list<DeliverySummaryRow>, studentRows:list<StudentRow>, requestRows:list<RequestRow>, auditRows:list<AuditLogRow&array{actor_name?: string|null}>, notificationRows:list<NotificationDeliverySearchRow>}'
+        RequestAttachmentRow: 'array{id:int, request_id:int, note_id:int|null, uploaded_by_user_id:int, visibility:string, original_name:string, stored_name:string, mime_type:string, file_size:int, created_at:string, uploaded_by_name?:string, student_id?:int, student_email?:string}'
+        RequestHistoryRow: 'array{id:int, request_id:int, status:string, remarks:string, assigned_user_id:int|null, created_at:string, assigned_name:string|null}'
+        RequestNoteRow: 'array{id:int, request_id:int, author_user_id:int, visibility:string, body:string, created_at:string, author_name:string}'
+        RequestRow: 'array{id:int, student_id:int, request_type:string, title:string, description:string, priority:string, due_at:string|null, status:string, assigned_user_id:int|null, created_by_user_id:int, submitted_at:string, updated_at:string, resolved_at:string|null, resolution_summary:string|null, student_number:string, first_name:string, last_name:string, department:string, student_email:string, assigned_name:string|null, created_by_name:string, history:list<RequestHistoryRow>, notes:list<RequestNoteRow>, attachments:list<RequestAttachmentRow>}'
+        RoleRow: 'array{id:int, slug:string, name:string, description:string, created_at:string, updated_at:string, user_count:int|string}'
+        RecentStudentRow: 'array{id:int, student_number:string, first_name:string, last_name:string, program:string, department:string, enrollment_status:string}'
+        StatusHistoryRow: 'array{id:int, student_id:int, status:string, remarks:string, assigned_user_id:int|null, created_at:string, assigned_personnel?:string|null}'
+        StudentFilters: 'array{search?: string, status?: string, enrollment_status?: string, department?: string, date_from?: string, date_to?: string}'
+        StudentInput: 'array{student_number?: string, first_name?: string, middle_name?: string|null, last_name?: string, birthdate?: string, program?: string, year_level?: string, email?: string, phone?: string, address?: string, guardian_name?: string, guardian_contact?: string, department?: string, enrollment_status?: string, photo_path?: string|null, created_at?: string, updated_at?: string, id?: int}'
+        StudentRow: 'array{id:int, student_number:string, first_name:string, middle_name:string|null, last_name:string, birthdate:string, program:string, year_level:string, email:string, phone:string, address:string, guardian_name:string, guardian_contact:string, department:string, enrollment_status:string, photo_path:string|null, created_at:string, updated_at:string, id_card_path:string|null, id_generated_at:string|null, latest_status:string, status_history:list<StatusHistoryRow>, enrollment_status_history:list<EnrollmentStatusHistoryRow>, audit_logs:list<AuditLogRow&array{actor_name?: string|null}>}'
+        UploadedFileRow: 'array{name?: string, tmp_name?: string, error?: int, size?: int|false}'
+        UserRow: 'array{id:int, name:string, email:string, mobile_phone:string|null, password_hash:string, role:string, department:string, created_at:string, updated_at:string, roles:list<string>}'
+        ValidationErrors: 'array<string, list<string>>'
+        ValidationRules: 'array<string, string|list<string>>'
+    treatPhpDocTypesAsCertain: false
+    parallel:
+        maximumNumberOfProcesses: 1

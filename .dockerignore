@@ -1,0 +1,12 @@
+.env
+.git
+.github
+.php-cs-fixer.cache
+.phpunit.cache
+build
+storage/logs
+storage/database/*.sqlite
+storage/app/private/uploads
+storage/app/public/id-cards
+tests/_output
+vendor

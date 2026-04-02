@@ -1,0 +1,15 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Codeception;
+
+abstract class Step
+{
+    /**
+     * @param array<int|string, mixed> $arguments
+     */
+    public function __construct(protected string $action, protected array $arguments = [])
+    {
+    }
+}

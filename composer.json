@@ -1,0 +1,77 @@
+{
+    "name": "apollo/student-information-management-sub-system",
+    "description": "Student Information Management Sub-system rebuilt as a secure PHP MVC application.",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.4",
+        "altorouter/altorouter": "^2.0",
+        "chillerlan/php-qrcode": "^5.0",
+        "filp/whoops": "^2.18",
+        "picqer/php-barcode-generator": "^2.4",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "require-dev": {
+        "codeception/codeception": "^5.1",
+        "codeception/module-phpbrowser": "^4.0",
+        "friendsofphp/php-cs-fixer": "^3.75",
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5",
+        "roave/security-advisories": "dev-latest"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "files": [
+            "app/Support/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "serve": "php -S 127.0.0.1:8000 -t public",
+        "serve:e2e": "php -S 127.0.0.1:18081 -t public",
+        "migrate": "php bin/console migrate",
+        "seed": "php bin/console seed",
+        "reset-db": "php bin/console reset-db",
+        "codecept:build": [
+            "vendor/bin/codecept build",
+            "php scripts/patch-codeception-actor.php"
+        ],
+        "test:unit": "bash scripts/run-phpunit-strict.sh --testsuite Unit --testdox",
+        "test:integration": "bash scripts/run-phpunit-strict.sh --testsuite Integration --testdox",
+        "coverage:check": "bash scripts/run-phpunit-coverage.sh --testsuite Unit,Integration --testdox",
+        "test:e2e:raw": "vendor/bin/codecept run Acceptance",
+        "test:e2e": "bash scripts/run-e2e.sh",
+        "test:deploy-smoke": "bash scripts/deployment-smoke.sh",
+        "test": [
+            "@test:unit",
+            "@test:integration"
+        ],
+        "analyse": "XDEBUG_MODE=off vendor/bin/phpstan analyse app public bin tests --memory-limit=1G",
+        "format": "bash scripts/run-php-cs-fixer.sh fix --allow-risky=yes --sequential",
+        "format:check": "bash scripts/run-php-cs-fixer.sh fix --dry-run --diff --allow-risky=yes --sequential",
+        "deps:audit": "composer audit --no-interaction",
+        "check:strict": [
+            "@format:check",
+            "@analyse",
+            "@coverage:check",
+            "@test:e2e",
+            "@deps:audit"
+        ],
+        "check:docker": "bash scripts/run-validator.sh composer check",
+        "check": "bash scripts/run-check.sh"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "codeception/lib-asserts": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

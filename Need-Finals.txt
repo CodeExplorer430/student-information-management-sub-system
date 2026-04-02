@@ -1,0 +1,63 @@
+New/Fix Student ID generation (Just Based The ID on BCP school id)
+also make it much more easier to use just a click of button then the id will start generating
+Need to add (student profile registration) photo upload
+Status Tracking Student:
+1. Core Features (Must-Have)
+📌 Student Profile Tracking
+Student ID
+Full name
+Course / Program
+Year level
+Contact info
+Status history (very important)
+📌 Status Monitoring System
+
+This is the heart of your module.
+
+Common statuses:
+
+Pending
+Under Review
+Approved
+Rejected
+Completed
+
+💡 Each status should include:
+
+Timestamp (date & time)
+Assigned personnel (who handled it)
+Remarks / comments
+📌 Status Timeline / History
+Show a step-by-step timeline
+Example:
+Submitted → Jan 10
+Reviewed → Jan 11
+Approved → Jan 12
+
+This improves transparency and tracking.
+
+📌 Search & Filter
+Search by Student ID or name
+Filter by:
+Status
+Date
+Department
+
+4. Functional Flow (How it works)
+Student submits request
+System sets status = Pending
+Staff reviews → updates to Under Review
+Staff decides → Approved / Rejected
+Final → Completed
+🔹 5. Interface Design (UI Ideas)
+Dashboard (summary of all statuses)
+Status progress bar (like tracking delivery)
+Table view of requests
+Timeline view per student
+
+Much better search in engine in all of the sub module 
+and add dashboard
+
+Additional Requirements:
+- Download and Print for ID generation
+- UI/UX design for the ID and Barcode
