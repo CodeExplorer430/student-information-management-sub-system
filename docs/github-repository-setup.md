@@ -10,8 +10,9 @@ workflow.
 - Create `develop` as the integration branch.
 - Use `feature/*`, `release/*`, and `hotfix/*` as short-lived supporting
   branches.
-- Prefer `develop` as the default branch when the team mainly merges features
-  there; keep `main` protected for releases and hotfixes.
+- Set `develop` as the default branch so feature work and normal pull requests
+  land on the integration line by default.
+- Keep `main` protected for releases and hotfixes.
 
 ## Branch protection
 ### `develop`
@@ -41,7 +42,8 @@ workflow.
 ## Repository metadata
 - Keep `.github/pull_request_template.md` active.
 - Enable the issue forms under `.github/ISSUE_TEMPLATE/`.
-- Replace the placeholder owner in `.github/CODEOWNERS`.
+- Keep `.github/CODEOWNERS` pointed at `@CodeExplorer430` until a real GitHub
+  team exists to replace the single-maintainer ownership model.
 - Keep labels lightweight and operationally meaningful, for example:
   - `bug`
   - `enhancement`
