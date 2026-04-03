@@ -36,10 +36,28 @@ final class RecordController
             $filters['student'] = $this->auth->user()['email'] ?? '';
         }
 
+        $page = max(1, (int) string_value($_GET['page'] ?? '1', '1'));
+        $perPage = 15;
+        $allRecords = $this->search->records($filters);
+        $total = count($allRecords);
+        $pageCount = max(1, (int) ceil($total / $perPage));
+        $offset = ($page - 1) * $perPage;
+        $records = array_slice($allRecords, $offset, $perPage);
+        $from = $records === [] ? 0 : $offset + 1;
+        $to = $records === [] ? 0 : $offset + count($records);
+
         $this->response->view('records/index', [
-            'records' => $this->search->records($filters),
+            'records' => $records,
             'filters' => $filters,
             'departments' => $this->students->allDepartments(),
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'page_count' => $pageCount,
+                'from' => $from,
+                'to' => $to,
+            ],
         ]);
     }
 

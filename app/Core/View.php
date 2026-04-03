@@ -89,7 +89,7 @@ final class View
 
         return [
             'app' => [
-                'name' => string_value($this->config->get('app.name', 'Student Information Management'), 'Student Information Management'),
+                'name' => string_value($this->config->get('app.name', 'Bestlink SIS'), 'Bestlink SIS'),
                 'user' => $user,
                 'url' => string_value($this->config->get('app.url', 'http://127.0.0.1:8000'), 'http://127.0.0.1:8000'),
                 'permissions' => $this->auth->permissions(),

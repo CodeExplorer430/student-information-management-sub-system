@@ -94,6 +94,8 @@ final class ViewTemplateCoverageIntegrationTest extends IntegrationTestCase
         ]);
 
         self::assertStringContainsString('Governance and access oversight', $adminHtml);
+        self::assertStringContainsString('Bestlink SIS', $adminHtml);
+        self::assertStringContainsString('href="/favicon.ico"', $adminHtml);
         self::assertStringContainsString('Register Student', $adminHtml);
         self::assertStringContainsString('Recently registered students', $adminHtml);
         self::assertStringContainsString('EMAIL', $adminHtml);
@@ -315,6 +317,114 @@ final class ViewTemplateCoverageIntegrationTest extends IntegrationTestCase
             'records' => [],
             'filters' => ['student' => '', 'department' => ''],
             'departments' => ['BSIT'],
+            'pagination' => [
+                'page' => 1,
+                'per_page' => 15,
+                'total' => 0,
+                'page_count' => 1,
+                'from' => 0,
+                'to' => 0,
+            ],
+        ]);
+        $recordsIndexPaginated = $view->render('records/index', [
+            'records' => [[
+                'first_name' => 'Aira',
+                'last_name' => 'Mendoza',
+                'student_number' => 'BSI-2026-1001',
+                'department' => 'BSIT',
+                'term_label' => '2025-2026 2nd Term',
+                'subject_code' => 'IT201',
+                'subject_title' => 'Web Development',
+                'units' => 3,
+                'grade' => '1.50',
+            ]],
+            'filters' => ['student' => 'Aira', 'department' => 'BSIT'],
+            'departments' => ['BSIT'],
+            'pagination' => [
+                'page' => 2,
+                'per_page' => 15,
+                'total' => 18,
+                'page_count' => 2,
+                'from' => 16,
+                'to' => 18,
+            ],
+        ]);
+        $adminUser = $this->app->get(\App\Repositories\UserRepository::class)->findByEmail('admin@bcp.edu');
+        self::assertNotNull($adminUser);
+        $adminUserId = (int) $adminUser['id'];
+        $session->set('auth.user_id', $adminUserId);
+        $diagnosticsView = $view->render('admin/diagnostics', [
+            'health' => [
+                'status' => 'fail',
+                'request_id' => 'req-view-001',
+                'generated_at' => '2026-04-03T10:00:00+08:00',
+                'checks' => [
+                    [
+                        'name' => 'database_connectivity',
+                        'status' => 'fail',
+                        'message' => 'Database connection timed out.',
+                    ],
+                    [
+                        'name' => 'session_path',
+                        'status' => 'pass',
+                        'message' => 'Directory is writable.',
+                    ],
+                ],
+            ],
+            'deploymentReadiness' => [
+                'app_env' => [
+                    'status' => 'pass',
+                    'message' => 'Production mode is enabled.',
+                ],
+            ],
+            'directoryStatus' => [
+                'session_path' => [
+                    'status' => 'pass',
+                    'message' => 'Directory is writable.',
+                    'path' => '/tmp/sessions',
+                ],
+            ],
+            'assetStatus' => [
+                'bootstrap_css' => [
+                    'status' => 'pass',
+                    'message' => 'Asset is present.',
+                    'path' => '/tmp/bootstrap.min.css',
+                ],
+            ],
+            'backupStatus' => [
+                'status' => 'pass',
+                'timestamp' => '2026-04-03T10:00:00+08:00',
+                'request_id' => 'backup-view-001',
+                'counts' => ['local' => 2, 'remote' => 1],
+                'thresholds' => ['local_hours' => 24, 'remote_hours' => 24, 'drill_hours' => 168, 'remote_enabled' => true],
+                'latest' => [
+                    'local_backup' => ['backup_id' => 'local-1', 'created_at' => '2026-04-03 08:00:00', 'age_hours' => 2.0, 'location' => '/backups/local-1.zip'],
+                    'verified_backup' => ['backup_id' => 'local-1', 'created_at' => '2026-04-03 08:00:00', 'age_hours' => 2.0, 'location' => '/backups/local-1.zip'],
+                    'export' => ['backup_id' => 'export-1', 'created_at' => '2026-04-03 08:10:00', 'age_hours' => 1.8, 'location' => '/exports/export-1.zip'],
+                    'remote_push' => ['backup_id' => 'remote-1', 'created_at' => '2026-04-03 08:15:00', 'age_hours' => 1.7, 'location' => 's3://remote-1.zip'],
+                    'drill' => ['backup_id' => 'drill-1', 'created_at' => '2026-04-02 08:15:00', 'age_hours' => 25.7, 'location' => '/drills/drill-1'],
+                ],
+                'checks' => [
+                    ['name' => 'local_backup_fresh', 'status' => 'pass', 'message' => 'Local backups are current.'],
+                ],
+            ],
+            'opsAlerts' => [
+                'status' => 'pass',
+                'timestamp' => '2026-04-03T10:00:00+08:00',
+                'request_id' => 'ops-view-001',
+                'counts' => ['active' => 0, 'notified' => 0, 'resolved' => 1],
+                'active_alerts' => [],
+                'notified_keys' => [],
+                'resolved_keys' => ['queue_latency'],
+            ],
+            'recentLogs' => [[
+                'timestamp' => '2026-04-03 09:55:00',
+                'level' => 'info',
+                'channel' => 'app',
+                'request_id' => 'req-view-001',
+                'message' => 'Diagnostics viewed.',
+                'context' => ['module' => 'diagnostics'],
+            ]],
         ]);
         $notificationsIndex = $view->render('notifications/index', [
             'notifications' => [[
@@ -351,7 +461,7 @@ final class ViewTemplateCoverageIntegrationTest extends IntegrationTestCase
             'departments' => ['BSIT'],
             'queueUsers' => [],
         ]);
-        $session->set('auth.user_id', 1);
+        $session->set('auth.user_id', $adminUserId);
         $idCardsIndex = $view->render('id-cards/index', [
             'students' => [[
                 'id' => 1,
@@ -400,6 +510,60 @@ final class ViewTemplateCoverageIntegrationTest extends IntegrationTestCase
             'workflowStatuses' => ['Pending', 'Under Review'],
             'enrollmentStatuses' => ['Active', 'On Leave'],
         ]);
+        $avatarFile = dirname(__DIR__, 2) . '/storage/app/private/uploads/view-account-avatar.png';
+        file_put_contents(
+            $avatarFile,
+            base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0GQAAAAASUVORK5CYII=', true)
+        );
+        $userRepository = $this->app->get(\App\Repositories\UserRepository::class);
+        $userRepository->updateAccount($adminUserId, [
+            'name' => 'Elena Garcia',
+            'email' => 'admin@bcp.edu',
+            'mobile_phone' => '09171234567',
+            'department' => 'ICT',
+            'photo_path' => 'view-account-avatar.png',
+            'updated_at' => '2026-04-03 11:00:00',
+        ]);
+        $rolesMatrix = $this->app->get(RoleRepository::class)->permissionMatrix();
+        $rolesView = $view->render('admin/roles', $rolesMatrix);
+        $accountView = $view->render('account/show', [
+            'userAccount' => [
+                'id' => $adminUserId,
+                'name' => 'Elena Garcia',
+                'email' => 'admin@bcp.edu',
+                'mobile_phone' => '09171234567',
+                'department' => 'ICT',
+                'photo_path' => 'view-account-avatar.png',
+            ],
+            'errors' => [
+                'mobile_phone' => ['Please provide a valid contact number.'],
+                'department' => ['Please provide a department.'],
+            ],
+        ]);
+        $adminUserEditView = $view->render('admin/user-edit', [
+            'userAccount' => [
+                'id' => 2,
+                'name' => 'Marco Villanueva',
+                'email' => 'staff@bcp.edu',
+                'mobile_phone' => '09180000000',
+                'department' => 'Student Affairs',
+                'photo_path' => '',
+                'role' => 'staff',
+                'roles' => ['staff'],
+            ],
+            'roles' => $rolesMatrix['roles'],
+            'permissionSummary' => [
+                'details' => [[
+                    'code' => 'dashboard.view_operations',
+                    'label' => 'View operations dashboard',
+                    'module' => 'dashboard',
+                    'description' => 'Access the registrar/staff operations dashboard.',
+                ]],
+                'module_count' => 1,
+                'modules' => ['dashboard'],
+            ],
+            'errors' => [],
+        ]);
         $statusesShowEmpty = $view->render('statuses/show', [
             'student' => [
                 'id' => 2,
@@ -444,6 +608,23 @@ final class ViewTemplateCoverageIntegrationTest extends IntegrationTestCase
         self::assertStringContainsString('No audit entries yet.', $studentShow);
         self::assertStringContainsString('No workflow rows matched', $statusesIndex);
         self::assertStringContainsString('No academic records matched', $recordsIndex);
+        self::assertStringContainsString('Showing 16-18 on page 2.', $recordsIndexPaginated);
+        self::assertStringContainsString('Previous', $recordsIndexPaginated);
+        self::assertStringContainsString('data-tab-list', $rolesView);
+        self::assertStringContainsString('role-tab-faculty', $rolesView);
+        self::assertStringContainsString('data-tab-list', $diagnosticsView);
+        self::assertStringContainsString('diagnostics-tab-attention', $diagnosticsView);
+        self::assertStringContainsString('Items that need action', $diagnosticsView);
+        self::assertStringContainsString('Database Connectivity', $diagnosticsView);
+        self::assertStringContainsString('Database connection timed out.', $diagnosticsView);
+        self::assertStringContainsString('My account details', $accountView);
+        self::assertStringContainsString('Profile image', $accountView);
+        self::assertStringContainsString('Save my account', $accountView);
+        self::assertStringContainsString('data:image/png;base64,', $accountView);
+        self::assertStringContainsString('Please provide a valid contact number.', $accountView);
+        self::assertStringContainsString('Please provide a department.', $accountView);
+        self::assertStringContainsString('Admin password reset', $adminUserEditView);
+        self::assertStringContainsString('Save role assignment', $adminUserEditView);
         self::assertStringContainsString('Mark all as read', $notificationsIndex);
         self::assertStringContainsString('New</span>', $notificationsIndex);
         self::assertStringContainsString('Request #7', $notificationsIndex);
@@ -461,13 +642,19 @@ final class ViewTemplateCoverageIntegrationTest extends IntegrationTestCase
         self::assertStringContainsString('Heads up', $flashPartial);
         self::assertStringContainsString('fa-circle-xmark', $flashPartial);
         self::assertStringContainsString('text-bg-info', $flashPartial);
+
+        @unlink($avatarFile);
     }
 
     public function testDashboardTemplateRendersOperationalAndFallbackBranches(): void
     {
         $view = $this->app->get(View::class);
         $session = $this->app->get(Session::class);
+        $adminUser = $this->app->get(\App\Repositories\UserRepository::class)->findByEmail('admin@bcp.edu');
         $_SERVER['REQUEST_URI'] = '/dashboard';
+
+        self::assertNotNull($adminUser);
+        $adminUserId = (int) $adminUser['id'];
 
         $session->set('auth.user_id', 2);
 
@@ -546,7 +733,7 @@ final class ViewTemplateCoverageIntegrationTest extends IntegrationTestCase
             'notifications' => [],
         ]);
 
-        $session->set('auth.user_id', 1);
+        $session->set('auth.user_id', $adminUserId);
 
         $adminEmptyHtml = $view->render('dashboard/index', [
             'overview' => [
@@ -657,5 +844,38 @@ final class ViewTemplateCoverageIntegrationTest extends IntegrationTestCase
         self::assertStringContainsString('No student records available', $idCardsEmpty);
         self::assertStringContainsString('Generate now', $idCardsEmpty);
         self::assertStringContainsString('No notifications yet', $notificationsEmpty);
+    }
+
+    public function testIdPreviewTemplateRendersNeutralCardFrame(): void
+    {
+        $view = $this->app->get(View::class);
+        $session = $this->app->get(Session::class);
+        $_SERVER['REQUEST_URI'] = '/id-cards/1';
+        $session->set('auth.user_id', 1);
+
+        $previewHtml = $view->render('id-cards/show', [
+            'student' => [
+                'id' => 1,
+                'first_name' => 'Aira',
+                'last_name' => 'Mendoza',
+                'student_number' => 'BSI-2026-1001',
+                'program' => 'BS Information Technology',
+                'year_level' => '3',
+                'department' => 'BSIT',
+                'enrollment_status' => 'Active',
+                'latest_status' => 'Approved',
+            ],
+            'card' => [
+                'image_data' => base64_encode('png-bytes'),
+                'generated_at' => '2026-04-03 12:00:00',
+                'barcode_payload' => 'BSI-2026-1001',
+            ],
+        ]);
+
+        self::assertStringContainsString('Student ID preview', $previewHtml);
+        self::assertStringContainsString('Download PNG', $previewHtml);
+        self::assertStringContainsString('Record summary', $previewHtml);
+        self::assertStringContainsString('Generated at 2026-04-03 12:00:00', $previewHtml);
+        self::assertStringNotContainsString('generated-card-shell__canvas', $previewHtml);
     }
 }

@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const accessibilityCloseControls = document.querySelectorAll('[data-accessibility-close]');
     const accessibilityOptions = document.querySelectorAll('[data-a11y-setting]');
     const accessibilityReset = document.querySelector('[data-a11y-reset]');
+    const tabLists = document.querySelectorAll('[data-tab-list]');
     const desktopBreakpoint = window.matchMedia('(min-width: 992px)');
     const collapsedKey = 'sims-sidebar-collapsed';
     const accessibilityKey = 'sims-accessibility';
@@ -166,6 +167,76 @@ document.addEventListener('DOMContentLoaded', () => {
             writeAccessibilityState(accessibilityState);
         });
     }
+
+    tabLists.forEach((tabList) => {
+        const triggers = Array.from(tabList.querySelectorAll('[data-tab-trigger]'));
+        if (triggers.length === 0) {
+            return;
+        }
+
+        const tabIds = triggers
+            .map((trigger) => trigger.getAttribute('data-tab-target'))
+            .filter((value) => typeof value === 'string' && value !== '');
+        const panels = tabIds
+            .map((id) => document.getElementById(id))
+            .filter((panel) => panel !== null);
+
+        const activateTab = (targetId) => {
+            triggers.forEach((trigger) => {
+                const isActive = trigger.getAttribute('data-tab-target') === targetId;
+                trigger.classList.toggle('is-active', isActive);
+                trigger.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                trigger.setAttribute('tabindex', isActive ? '0' : '-1');
+            });
+
+            panels.forEach((panel) => {
+                panel.hidden = panel.id !== targetId;
+            });
+        };
+
+        const initialTrigger = triggers.find((trigger) => trigger.classList.contains('is-active')) || triggers[0];
+        const initialTarget = initialTrigger.getAttribute('data-tab-target');
+        if (initialTarget) {
+            activateTab(initialTarget);
+        }
+
+        triggers.forEach((trigger, index) => {
+            trigger.addEventListener('click', () => {
+                const targetId = trigger.getAttribute('data-tab-target');
+                if (targetId) {
+                    activateTab(targetId);
+                }
+            });
+
+            trigger.addEventListener('keydown', (event) => {
+                if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft' && event.key !== 'Home' && event.key !== 'End') {
+                    return;
+                }
+
+                event.preventDefault();
+                let nextIndex = index;
+
+                if (event.key === 'ArrowRight') {
+                    nextIndex = (index + 1) % triggers.length;
+                } else if (event.key === 'ArrowLeft') {
+                    nextIndex = (index - 1 + triggers.length) % triggers.length;
+                } else if (event.key === 'Home') {
+                    nextIndex = 0;
+                } else if (event.key === 'End') {
+                    nextIndex = triggers.length - 1;
+                }
+
+                const nextTrigger = triggers[nextIndex];
+                const targetId = nextTrigger.getAttribute('data-tab-target');
+                if (!targetId) {
+                    return;
+                }
+
+                activateTab(targetId);
+                nextTrigger.focus();
+            });
+        });
+    });
 
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {

@@ -49,6 +49,8 @@ final class UserRepositoryIntegrationTest extends IntegrationTestCase
         self::assertNotNull($created);
         self::assertContains('staff', $created['roles']);
         self::assertSame('staff', $created['role']);
+        self::assertNull($created['mobile_phone']);
+        self::assertNull(nullable_string_value($created['photo_path'] ?? null));
 
         self::assertSame(6, $repository->count());
         self::assertNull($repository->find(9999));
@@ -60,6 +62,33 @@ final class UserRepositoryIntegrationTest extends IntegrationTestCase
         self::assertCount(2, $selected);
         self::assertContains('Coverage User', array_column($selected, 'name'));
         self::assertContains((string) $admin['name'], array_column($selected, 'name'));
+
+        $repository->updateAccount($createdId, [
+            'name' => 'Coverage User Updated',
+            'email' => 'coverage.user.updated@bcp.edu',
+            'mobile_phone' => '09171234567',
+            'department' => 'ICT',
+            'photo_path' => 'user-avatar-test.png',
+            'updated_at' => '2026-04-03 10:00:00',
+        ]);
+
+        $updatedAccount = $repository->find($createdId);
+
+        self::assertNotNull($updatedAccount);
+        self::assertSame('Coverage User Updated', $updatedAccount['name']);
+        self::assertSame('coverage.user.updated@bcp.edu', $updatedAccount['email']);
+        self::assertSame('09171234567', $updatedAccount['mobile_phone']);
+        self::assertSame('ICT', $updatedAccount['department']);
+        self::assertSame('user-avatar-test.png', nullable_string_value($updatedAccount['photo_path'] ?? null));
+
+        self::assertTrue($repository->emailExists('coverage.user.updated@bcp.edu'));
+        self::assertFalse($repository->emailExists('coverage.user.updated@bcp.edu', $createdId));
+
+        $repository->updatePassword($createdId, password_hash('UpdatedPassword123!', PASSWORD_DEFAULT));
+        $updatedPassword = $repository->find($createdId);
+
+        self::assertNotNull($updatedPassword);
+        self::assertTrue(password_verify('UpdatedPassword123!', (string) $updatedPassword['password_hash']));
     }
 
     public function testPrivateRoleHelpersCoverNormalizationAndPriorityFallbacks(): void
@@ -140,7 +169,7 @@ final class UserRepositoryIntegrationTest extends IntegrationTestCase
                 new Logger($logFile)
             );
             $connection = $database->connection();
-            $connection->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT, mobile_phone TEXT, role TEXT, department TEXT)');
+            $connection->exec('CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT, mobile_phone TEXT, photo_path TEXT, role TEXT, department TEXT)');
 
             $repository = new UserRepository($database);
 

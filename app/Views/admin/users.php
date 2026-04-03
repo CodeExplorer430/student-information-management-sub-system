@@ -3,6 +3,7 @@
 /** @var list<UserRow> $users */
 /** @var list<RoleRow> $roles */
 /** @var array<int, array<int, string>> $effectivePermissions */
+/** @var array<int, array{details: list<array{code: string, label: string, module: string, description: string}>, module_count: int, modules: list<string>}> $effectivePermissionSummaries */
 /** @var string $csrf */
 /** @var \App\Core\ViewContext $view */
 
@@ -19,7 +20,7 @@ $view->layout('layouts/base', [
         <div>
             <div class="section-pill">Governance</div>
             <h2>User role assignment</h2>
-            <p>Review active accounts and map them to the appropriate operational role.</p>
+            <p>Review active accounts, assign roles, and confirm what each person can access without exposing raw system keys first.</p>
         </div>
     </div>
     <div class="table-shell">
@@ -29,12 +30,13 @@ $view->layout('layouts/base', [
                 <th>User</th>
                 <th>Department</th>
                 <th>Roles</th>
-                <th>Effective Permissions</th>
-                <th class="text-end">Update</th>
+                <th>Access Summary</th>
+                <th class="text-end">Actions</th>
             </tr>
             </thead>
             <tbody>
             <?php foreach ($users as $user): ?>
+                <?php $permissionSummary = $effectivePermissionSummaries[(int) ($user['id'] ?? 0)] ?? ['details' => [], 'module_count' => 0, 'modules' => []]; ?>
                 <tr>
                     <td>
                         <div class="fw-semibold"><?= e($user['name'] ?? '') ?></div>
@@ -54,17 +56,41 @@ $view->layout('layouts/base', [
                         </form>
                     </td>
                     <td>
-                        <div class="permission-chip-list">
-                            <?php foreach (array_slice($effectivePermissions[$user['id']] ?? [], 0, 4) as $permission): ?>
-                                <span class="permission-chip"><?= e($permission) ?></span>
+                        <div class="admin-access-summary">
+                            <div class="admin-access-summary__headline">
+                                <strong><?= e((string) count($permissionSummary['details'])) ?> permissions enabled</strong>
+                                <span><?= e((string) $permissionSummary['module_count']) ?> access areas</span>
+                            </div>
+                            <div class="permission-chip-list">
+                            <?php foreach (array_slice($permissionSummary['details'], 0, 4) as $permission): ?>
+                                <span class="permission-chip" title="<?= e($permission['description']) ?>"><?= e($permission['label']) ?></span>
                             <?php endforeach; ?>
-                            <?php if (count($effectivePermissions[$user['id']] ?? []) > 4): ?>
-                                <span class="permission-chip permission-chip--muted">+<?= e(count($effectivePermissions[$user['id']] ?? []) - 4) ?> more</span>
+                            <?php if (count($permissionSummary['details']) > 4): ?>
+                                <span class="permission-chip permission-chip--muted">+<?= e(count($permissionSummary['details']) - 4) ?> more</span>
+                            <?php endif; ?>
+                            </div>
+                            <?php if ($permissionSummary['modules'] !== []): ?>
+                                <div class="admin-access-summary__areas">
+                                    <?= e(implode(' • ', array_map(static fn (string $module): string => ucwords(str_replace('_', ' ', $module)), $permissionSummary['modules']))) ?>
+                                </div>
+                            <?php endif; ?>
+                            <?php if ($permissionSummary['details'] !== []): ?>
+                                <details class="admin-access-summary__details">
+                                    <summary>Technical permission keys</summary>
+                                    <div class="permission-chip-list mt-2">
+                                        <?php foreach ($permissionSummary['details'] as $permission): ?>
+                                            <span class="permission-chip permission-chip--muted"><?= e($permission['code']) ?></span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </details>
                             <?php endif; ?>
                         </div>
                     </td>
                     <td class="text-end">
-                        <button class="btn btn-sm btn-primary" form="user-role-form-<?= e($user['id'] ?? '') ?>">Save</button>
+                        <div class="d-inline-flex gap-2">
+                            <a href="/admin/users/<?= e($user['id'] ?? '') ?>/edit" class="btn btn-sm btn-outline-primary">Edit account</a>
+                            <button class="btn btn-sm btn-primary" form="user-role-form-<?= e($user['id'] ?? '') ?>">Save roles</button>
+                        </div>
                     </td>
                 </tr>
             <?php endforeach; ?>

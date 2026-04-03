@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
+use App\Controllers\AccountController;
+use App\Controllers\AdminController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\IdCardController;
@@ -282,6 +284,261 @@ final class ControllerDirectCoverageIntegrationTest extends HttpIntegrationTestC
 
         $missingDownload = $this->captureResult(fn () => $controller->download((int) $otherStudent['id']));
         $this->assertRedirect($missingDownload, '/id-cards');
+    }
+
+    public function testAccountControllerCoversGuestValidationExceptionAndSuccessBranches(): void
+    {
+        $controller = $this->app->get(AccountController::class);
+        $exceptionMapper = new ReflectionMethod(AccountController::class, 'errorsForException');
+        $exceptionMapper->setAccessible(true);
+
+        $_SESSION = [];
+        $this->assertRedirect($this->captureResult(fn () => $controller->show()), '/login');
+
+        $this->actingAs('admin@bcp.edu');
+
+        $show = $this->captureResult(fn () => $controller->show());
+        self::assertSame(200, $show->status());
+        self::assertStringContainsString('My account details', $show->body());
+
+        $_POST = [
+            'name' => '',
+            'email' => 'not-an-email',
+        ];
+
+        try {
+            $invalid = $this->captureResult(fn () => $controller->update());
+        } finally {
+            $_POST = [];
+            $_FILES = [];
+        }
+
+        self::assertSame(422, $invalid->status());
+        self::assertStringContainsString('This field is required.', $invalid->body());
+
+        $_POST = [
+            'name' => 'Elena Garcia',
+            'email' => 'student@bcp.edu',
+            'mobile_phone' => '09171234567',
+            'department' => 'ICT',
+        ];
+
+        try {
+            $duplicate = $this->captureResult(fn () => $controller->update());
+        } finally {
+            $_POST = [];
+            $_FILES = [];
+        }
+
+        self::assertSame(422, $duplicate->status());
+        self::assertStringContainsString('already assigned to another user', $duplicate->body());
+
+        $badPhoto = tempnam(sys_get_temp_dir(), 'sims-account-photo-');
+        self::assertNotFalse($badPhoto);
+        file_put_contents($badPhoto, 'plain text');
+
+        $_POST = [
+            'name' => 'Elena Garcia',
+            'email' => 'admin@bcp.edu',
+            'mobile_phone' => '09171234567',
+            'department' => 'ICT',
+        ];
+        $_FILES['photo'] = [
+            'name' => 'bad.txt',
+            'tmp_name' => $badPhoto,
+            'error' => UPLOAD_ERR_OK,
+            'size' => filesize($badPhoto),
+        ];
+
+        try {
+            $photoFailure = $this->captureResult(fn () => $controller->update());
+        } finally {
+            @unlink($badPhoto);
+            $_POST = [];
+            $_FILES = [];
+        }
+
+        self::assertSame(422, $photoFailure->status());
+        self::assertStringContainsString('Only JPG, PNG, and WEBP images are allowed.', $photoFailure->body());
+
+        $_POST = [
+            'name' => 'Elena Garcia Updated',
+            'email' => 'admin@bcp.edu',
+            'mobile_phone' => '09179998888',
+            'department' => 'Operations',
+        ];
+
+        try {
+            $updated = $this->captureResult(fn () => $controller->update());
+        } finally {
+            $_POST = [];
+            $_FILES = [];
+        }
+
+        $this->assertRedirect($updated, '/account');
+
+        $user = $this->app->get(UserRepository::class)->findByEmail('admin@bcp.edu');
+        self::assertNotNull($user);
+        self::assertSame('Elena Garcia Updated', $user['name']);
+        self::assertSame('09179998888', $user['mobile_phone']);
+        self::assertSame('Operations', $user['department']);
+
+        /** @var array<string, array<int, string>> $genericErrors */
+        $genericErrors = $exceptionMapper->invoke($controller, new \RuntimeException('Generic account issue.'));
+        self::assertSame(['name' => ['Generic account issue.']], $genericErrors);
+    }
+
+    public function testAdminControllerCoversUserAccountEditAndResetBranches(): void
+    {
+        $controller = $this->app->get(AdminController::class);
+        $exceptionMapper = new ReflectionMethod(AdminController::class, 'accountErrorsForException');
+        $exceptionMapper->setAccessible(true);
+
+        $this->actingAs('admin@bcp.edu');
+
+        $missingEdit = $this->captureResult(fn () => $controller->editUser(9999));
+        self::assertSame(404, $missingEdit->status());
+
+        $edit = $this->captureResult(fn () => $controller->editUser(2));
+        self::assertSame(200, $edit->status());
+        self::assertStringContainsString('Admin password reset', $edit->body());
+
+        $_POST = [
+            'name' => '',
+            'email' => 'bad-email',
+        ];
+
+        try {
+            $invalidUpdate = $this->captureResult(fn () => $controller->updateUserAccount(2));
+        } finally {
+            $_POST = [];
+            $_FILES = [];
+        }
+
+        self::assertSame(422, $invalidUpdate->status());
+        self::assertStringContainsString('This field is required.', $invalidUpdate->body());
+
+        $_POST = [
+            'name' => 'Marco Villanueva',
+            'email' => 'admin@bcp.edu',
+            'mobile_phone' => '09170000000',
+            'department' => 'Student Affairs',
+        ];
+
+        try {
+            $duplicateUpdate = $this->captureResult(fn () => $controller->updateUserAccount(2));
+        } finally {
+            $_POST = [];
+            $_FILES = [];
+        }
+
+        self::assertSame(422, $duplicateUpdate->status());
+        self::assertStringContainsString('already assigned to another user', $duplicateUpdate->body());
+
+        $badPhoto = tempnam(sys_get_temp_dir(), 'sims-admin-account-photo-');
+        self::assertNotFalse($badPhoto);
+        file_put_contents($badPhoto, 'plain text');
+
+        $_POST = [
+            'name' => 'Marco Villanueva',
+            'email' => 'staff@bcp.edu',
+            'mobile_phone' => '09170000000',
+            'department' => 'Student Affairs',
+        ];
+        $_FILES['photo'] = [
+            'name' => 'bad.txt',
+            'tmp_name' => $badPhoto,
+            'error' => UPLOAD_ERR_OK,
+            'size' => filesize($badPhoto),
+        ];
+
+        try {
+            $photoFailure = $this->captureResult(fn () => $controller->updateUserAccount(2));
+        } finally {
+            @unlink($badPhoto);
+            $_POST = [];
+            $_FILES = [];
+        }
+
+        self::assertSame(422, $photoFailure->status());
+        self::assertStringContainsString('Only JPG, PNG, and WEBP images are allowed.', $photoFailure->body());
+
+        $_POST = [
+            'name' => 'Marco Villanueva Updated',
+            'email' => 'staff@bcp.edu',
+            'mobile_phone' => '09181112222',
+            'department' => 'Operations',
+        ];
+
+        try {
+            $validUpdate = $this->captureResult(fn () => $controller->updateUserAccount(2));
+        } finally {
+            $_POST = [];
+            $_FILES = [];
+        }
+
+        $this->assertRedirect($validUpdate, '/admin/users/2/edit');
+
+        $updatedUser = $this->app->get(UserRepository::class)->find(2);
+        self::assertNotNull($updatedUser);
+        self::assertSame('Marco Villanueva Updated', $updatedUser['name']);
+        self::assertSame('09181112222', $updatedUser['mobile_phone']);
+        self::assertSame('Operations', $updatedUser['department']);
+
+        $missingUpdate = $this->captureResult(fn () => $controller->updateUserAccount(9999));
+        self::assertSame(404, $missingUpdate->status());
+
+        $_POST = [
+            'password' => '',
+            'password_confirmation' => '',
+        ];
+
+        try {
+            $blankReset = $this->captureResult(fn () => $controller->resetUserPassword(2));
+        } finally {
+            $_POST = [];
+        }
+
+        self::assertSame(422, $blankReset->status());
+        self::assertStringContainsString('Provide a password for the reset.', $blankReset->body());
+
+        $_POST = [
+            'password' => 'NewPassword123!',
+            'password_confirmation' => 'Mismatch123!',
+        ];
+
+        try {
+            $mismatchReset = $this->captureResult(fn () => $controller->resetUserPassword(2));
+        } finally {
+            $_POST = [];
+        }
+
+        self::assertSame(422, $mismatchReset->status());
+        self::assertStringContainsString('Password confirmation does not match.', $mismatchReset->body());
+
+        $_POST = [
+            'password' => 'AdminReset123!',
+            'password_confirmation' => 'AdminReset123!',
+        ];
+
+        try {
+            $reset = $this->captureResult(fn () => $controller->resetUserPassword(2));
+        } finally {
+            $_POST = [];
+        }
+
+        $this->assertRedirect($reset, '/admin/users/2/edit');
+
+        $resetUser = $this->app->get(UserRepository::class)->find(2);
+        self::assertNotNull($resetUser);
+        self::assertTrue(password_verify('AdminReset123!', (string) $resetUser['password_hash']));
+
+        $missingReset = $this->captureResult(fn () => $controller->resetUserPassword(9999));
+        self::assertSame(404, $missingReset->status());
+
+        /** @var array<string, array<int, string>> $genericErrors */
+        $genericErrors = $exceptionMapper->invoke($controller, new \RuntimeException('Generic admin account issue.'));
+        self::assertSame(['name' => ['Generic admin account issue.']], $genericErrors);
     }
 
     public function testRequestControllerTransitionAndAccessHelperCoverDirectBranches(): void

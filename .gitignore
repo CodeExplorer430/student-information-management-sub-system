@@ -4,6 +4,7 @@
 /.phpunit.cache/
 /storage/logs/*.log
 /storage/database/*.sqlite
+/storage/database/*.sqlite-journal
 /storage/framework/cache/*
 /storage/framework/sessions/*
 /storage/framework/test-flash-sessions/*

@@ -20,9 +20,11 @@ $currentPath = $current_path ?? '/';
 $permissions = $app['permissions'];
 $notificationUnreadCount = $app['notification_unread_count'];
 $bodyClass = $user !== null ? 'authenticated-shell role-' . preg_replace('/[^a-z0-9_-]+/i', '-', (string) $role) : 'guest-shell';
+$userAvatar = $user !== null ? private_upload_data_uri(nullable_string_value($user['photo_path'] ?? null)) : '';
 
 $navItems = [
     ['label' => 'Dashboard', 'href' => '/dashboard', 'icon' => 'fa-gauge-high', 'active' => $currentPath === '/dashboard' || $currentPath === '/', 'permissions' => []],
+    ['label' => 'My Account', 'href' => '/account', 'icon' => 'fa-user-circle', 'active' => str_starts_with($currentPath, '/account'), 'permissions' => []],
     ['label' => 'Student Profiles', 'href' => '/students', 'icon' => 'fa-user-graduate', 'active' => str_starts_with($currentPath, '/students'), 'permissions' => ['students.view']],
     ['label' => 'Academic Records', 'href' => '/records', 'icon' => 'fa-book-open-reader', 'active' => str_starts_with($currentPath, '/records'), 'permissions' => ['records.view']],
     ['label' => 'Status Tracking', 'href' => '/statuses', 'icon' => 'fa-chart-line', 'active' => str_starts_with($currentPath, '/statuses'), 'permissions' => ['statuses.view']],
@@ -41,6 +43,14 @@ $navItems = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($title) ?></title>
+    <meta name="application-name" content="<?= e($appName) ?>">
+    <meta name="apple-mobile-web-app-title" content="<?= e($appName) ?>">
+    <meta name="theme-color" content="#132848">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <script>
         (() => {
             try {
@@ -75,10 +85,12 @@ $navItems = [
         <aside class="sidebar" id="app-sidebar">
             <div class="sidebar-header">
                 <a href="/dashboard" class="sidebar-brand">
-                    <span class="sidebar-brand__mark"><i class="fas fa-user-graduate"></i></span>
+                    <span class="sidebar-brand__mark sidebar-brand__mark--logo">
+                        <img src="/assets/branding/bcp-logo.png" alt="Bestlink College of the Philippines logo">
+                    </span>
                     <span class="sidebar-brand__text">
-                        <strong>Student Information System</strong>
-                        <small>Registrar and student operations workspace</small>
+                        <strong><?= e($appName) ?></strong>
+                        <small>Bestlink College of the Philippines operations workspace</small>
                     </span>
                 </a>
             </div>
@@ -110,8 +122,14 @@ $navItems = [
 
             <div class="sidebar-footer">
                 <div class="sidebar-user">
-                    <div class="user-avatar user-avatar--sidebar"><?= e(user_initials($userName)) ?></div>
-                    <div>
+                    <div class="user-avatar user-avatar--sidebar">
+                        <?php if ($userAvatar !== ''): ?>
+                            <img src="<?= e($userAvatar) ?>" alt="<?= e($userName) ?>">
+                        <?php else: ?>
+                            <?= e(user_initials($userName)) ?>
+                        <?php endif; ?>
+                    </div>
+                    <div class="sidebar-user__meta">
                         <div class="fw-semibold"><?= e($userName) ?></div>
                         <div class="small text-uppercase"><?= e((string) $role) ?></div>
                     </div>
@@ -136,6 +154,10 @@ $navItems = [
                     <div>
                         <h1><?= e($pageTitle) ?></h1>
                         <p><?= e($pageDescription) ?></p>
+                        <div class="page-heading__brand">
+                            <img src="/assets/branding/bcp-logo.png" alt="Bestlink College of the Philippines logo">
+                            <span>Bestlink College of the Philippines</span>
+                        </div>
                     </div>
                 </div>
                 <div class="user-info">
@@ -153,11 +175,19 @@ $navItems = [
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"><?= e($notificationUnreadCount) ?></span>
                         <?php endif; ?>
                     </a>
-                    <div class="text-end">
-                        <div class="fw-semibold"><?= e($userName) ?></div>
-                        <div class="text-muted small text-capitalize"><?= e((string) $role) ?></div>
-                    </div>
-                    <div class="user-avatar"><?= e(user_initials($userName)) ?></div>
+                    <a href="/account" class="account-menu-link" aria-label="Open my account">
+                        <div class="text-end">
+                            <div class="fw-semibold"><?= e($userName) ?></div>
+                            <div class="text-muted small text-capitalize"><?= e((string) $role) ?></div>
+                        </div>
+                        <div class="user-avatar">
+                            <?php if ($userAvatar !== ''): ?>
+                                <img src="<?= e($userAvatar) ?>" alt="<?= e($userName) ?>">
+                            <?php else: ?>
+                                <?= e(user_initials($userName)) ?>
+                            <?php endif; ?>
+                        </div>
+                    </a>
                 </div>
             </header>
 

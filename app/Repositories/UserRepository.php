@@ -62,7 +62,7 @@ final class UserRepository
     }
 
     /**
-     * @param array{name:string, email:string, password_hash:string, role?:string, roles?: list<string>, department:string, created_at:string, updated_at:string} $data
+     * @param array{name:string, email:string, password_hash:string, mobile_phone?: string|null, photo_path?: string|null, role?:string, roles?: list<string>, department:string, created_at:string, updated_at:string} $data
      */
     public function create(array $data): int
     {
@@ -70,10 +70,12 @@ final class UserRepository
         $primaryRole = $roles[0] ?? (string) ($data['role'] ?? '');
         $data['role'] = $primaryRole;
         unset($data['roles']);
+        $data['mobile_phone'] = nullable_string_value($data['mobile_phone'] ?? null);
+        $data['photo_path'] = nullable_string_value($data['photo_path'] ?? null);
 
         $statement = $this->database->connection()->prepare(
-            'INSERT INTO users (name, email, password_hash, role, department, created_at, updated_at)
-             VALUES (:name, :email, :password_hash, :role, :department, :created_at, :updated_at)'
+            'INSERT INTO users (name, email, mobile_phone, password_hash, photo_path, role, department, created_at, updated_at)
+             VALUES (:name, :email, :mobile_phone, :password_hash, :photo_path, :role, :department, :created_at, :updated_at)'
         );
 
         $statement->execute($data);
@@ -90,7 +92,7 @@ final class UserRepository
     public function all(): array
     {
         /** @var list<UserRow> $users */
-        $users = rows_value($this->database->query('SELECT id, name, email, mobile_phone, role, department FROM users ORDER BY name ASC')
+        $users = rows_value($this->database->query('SELECT id, name, email, mobile_phone, photo_path, role, department FROM users ORDER BY name ASC')
             ->fetchAll(PDO::FETCH_ASSOC));
 
         if ($users === []) {
@@ -122,7 +124,7 @@ final class UserRepository
 
         $placeholders = implode(', ', array_fill(0, count($ids), '?'));
         $statement = $this->database->connection()->prepare(
-            'SELECT id, name, email, mobile_phone, role, department
+            'SELECT id, name, email, mobile_phone, photo_path, role, department
              FROM users
              WHERE id IN (' . $placeholders . ')
              ORDER BY name ASC'
@@ -151,6 +153,52 @@ final class UserRepository
     public function updateRoles(int $id, array $roles): void
     {
         $this->syncRoles($id, $roles);
+    }
+
+    /**
+     * @param array{name: string, email: string, mobile_phone: string|null, department: string, photo_path: string|null, updated_at: string} $data
+     */
+    public function updateAccount(int $id, array $data): void
+    {
+        $statement = $this->database->connection()->prepare(
+            'UPDATE users
+             SET name = :name,
+                 email = :email,
+                 mobile_phone = :mobile_phone,
+                 department = :department,
+                 photo_path = :photo_path,
+                 updated_at = :updated_at
+             WHERE id = :id'
+        );
+        $statement->execute($data + ['id' => $id]);
+    }
+
+    public function updatePassword(int $id, string $passwordHash): void
+    {
+        $statement = $this->database->connection()->prepare(
+            'UPDATE users SET password_hash = :password_hash, updated_at = :updated_at WHERE id = :id'
+        );
+        $statement->execute([
+            'password_hash' => $passwordHash,
+            'updated_at' => date('Y-m-d H:i:s'),
+            'id' => $id,
+        ]);
+    }
+
+    public function emailExists(string $email, ?int $exceptId = null): bool
+    {
+        $sql = 'SELECT COUNT(*) FROM users WHERE email = :email';
+        $params = ['email' => $email];
+
+        if ($exceptId !== null) {
+            $sql .= ' AND id != :except_id';
+            $params['except_id'] = $exceptId;
+        }
+
+        $statement = $this->database->connection()->prepare($sql);
+        $statement->execute($params);
+
+        return (int) $statement->fetchColumn() > 0;
     }
 
     /**

@@ -276,3 +276,28 @@ function user_initials(?string $name): string
 
     return $initials !== '' ? $initials : 'U';
 }
+
+function private_upload_data_uri(?string $storedName): string
+{
+    $storedName = trim((string) $storedName);
+    if ($storedName === '') {
+        return '';
+    }
+
+    $path = dirname(__DIR__, 2) . '/storage/app/private/uploads/' . ltrim($storedName, '/');
+    if (!is_file($path)) {
+        return '';
+    }
+
+    $contents = file_get_contents($path);
+    if (!is_string($contents) || $contents === '') {
+        return '';
+    }
+
+    $mimeType = mime_content_type($path);
+    if (!is_string($mimeType) || !str_starts_with($mimeType, 'image/')) {
+        return '';
+    }
+
+    return 'data:' . $mimeType . ';base64,' . base64_encode($contents);
+}

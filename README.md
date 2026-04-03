@@ -1,4 +1,4 @@
-# Student Information Management Sub-system
+# Bestlink SIS
 
 Clean MVC PHP application for student profile registration, profile updates,
 academic records viewing, request-center workflows, role-based

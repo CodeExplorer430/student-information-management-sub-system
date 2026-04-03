@@ -69,7 +69,7 @@ final class NotificationService
 
         $driver = string_value($this->config->get('notifications.email_driver', 'log'), 'log');
         $fromAddress = string_value($this->config->get('notifications.email_from_address', 'noreply@bcp.edu'), 'noreply@bcp.edu');
-        $fromName = string_value($this->config->get('notifications.email_from_name', 'Student Information Management'), 'Student Information Management');
+        $fromName = string_value($this->config->get('notifications.email_from_name', 'Bestlink SIS'), 'Bestlink SIS');
         $status = 'failed';
         $errorMessage = null;
         $deliveredAt = null;

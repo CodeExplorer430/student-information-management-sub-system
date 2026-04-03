@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Controllers\AccountController;
 use App\Controllers\AdminController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
@@ -25,6 +26,8 @@ $router->post('/logout', [AuthController::class, 'logout'], ['auth']);
 
 $router->get('/', [DashboardController::class, 'index'], ['auth']);
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
+$router->get('/account', [AccountController::class, 'show'], ['auth']);
+$router->post('/account', [AccountController::class, 'update'], ['auth', 'csrf']);
 
 $router->get('/students', [StudentController::class, 'index'], ['auth', 'permission:students.view']);
 $router->get('/students/create', [StudentController::class, 'create'], ['auth', 'permission:students.create']);
@@ -60,6 +63,9 @@ $router->get('/notifications', [NotificationController::class, 'index'], ['auth'
 $router->post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'], ['auth', 'csrf']);
 
 $router->get('/admin/users', [AdminController::class, 'users'], ['auth', 'permission:admin.users']);
+$router->get('/admin/users/[i:id]/edit', [AdminController::class, 'editUser'], ['auth', 'permission:admin.users']);
+$router->post('/admin/users/[i:id]/update', [AdminController::class, 'updateUserAccount'], ['auth', 'permission:admin.users', 'csrf']);
+$router->post('/admin/users/[i:id]/password', [AdminController::class, 'resetUserPassword'], ['auth', 'permission:admin.users', 'csrf']);
 $router->post('/admin/users/[i:id]/role', [AdminController::class, 'updateUserRole'], ['auth', 'permission:admin.users', 'csrf']);
 $router->get('/admin/roles', [AdminController::class, 'roles'], ['auth', 'permission:admin.roles']);
 $router->post('/admin/roles/[a:slug]/permissions', [AdminController::class, 'syncRolePermissions'], ['auth', 'permission:admin.roles', 'csrf']);

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Controllers\AccountController;
 use App\Controllers\AdminController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
@@ -35,6 +36,7 @@ use App\Repositories\RequestRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\StudentRepository;
 use App\Repositories\UserRepository;
+use App\Services\AccountService;
 use App\Services\AuditService;
 use App\Services\BackupService;
 use App\Services\BackupStatusService;
@@ -59,11 +61,16 @@ if (file_exists($root . '/.env')) {
     Dotenv::createImmutable($root)->safeLoad();
 }
 
+$appName = env('APP_NAME', 'Bestlink SIS');
+$appName = $appName === 'Student Information Management' ? 'Bestlink SIS' : $appName;
+$emailFromName = env('NOTIFY_EMAIL_FROM_NAME', 'Bestlink SIS');
+$emailFromName = $emailFromName === 'Student Information Management' ? 'Bestlink SIS' : $emailFromName;
+
 $app = new Application($root);
 
 $app->singleton(Config::class, static fn (): Config => new Config([
     'app' => [
-        'name' => env('APP_NAME', 'Student Information Management'),
+        'name' => $appName,
         'env' => env('APP_ENV', 'production'),
         'debug' => env('APP_DEBUG', 'false') === 'true',
         'url' => env('APP_URL', 'http://127.0.0.1:8000'),
@@ -109,7 +116,7 @@ $app->singleton(Config::class, static fn (): Config => new Config([
     'notifications' => [
         'email_driver' => env('NOTIFY_EMAIL_DRIVER', 'log'),
         'email_from_address' => env('NOTIFY_EMAIL_FROM_ADDRESS', 'noreply@bcp.edu'),
-        'email_from_name' => env('NOTIFY_EMAIL_FROM_NAME', 'Student Information Management'),
+        'email_from_name' => $emailFromName,
         'sms_driver' => env('NOTIFY_SMS_DRIVER', 'log'),
         'sms_api_url' => env('NOTIFY_SMS_API_URL', ''),
         'sms_api_token' => env('NOTIFY_SMS_API_TOKEN', ''),
@@ -230,6 +237,12 @@ $app->singleton(StudentService::class, static fn (Application $app): StudentServ
     $app->get(AuditService::class)
 ));
 
+$app->singleton(AccountService::class, static fn (Application $app): AccountService => new AccountService(
+    $app->get(UserRepository::class),
+    $app->get(FileStorageService::class),
+    $app->get(AuditService::class)
+));
+
 $app->singleton(NotificationService::class, static fn (Application $app): NotificationService => new NotificationService(
     $app->get(NotificationRepository::class),
     $app->get(UserRepository::class),
@@ -311,6 +324,13 @@ $app->singleton(DashboardController::class, static fn (Application $app): Dashbo
     $app->get(NotificationRepository::class)
 ));
 
+$app->singleton(AccountController::class, static fn (Application $app): AccountController => new AccountController(
+    $app->get(Response::class),
+    $app->get(AccountService::class),
+    $app->get(Validator::class),
+    $app->get(Auth::class)
+));
+
 $app->singleton(StudentController::class, static fn (Application $app): StudentController => new StudentController(
     $app->get(Response::class),
     $app->get(StudentService::class),
@@ -367,7 +387,9 @@ $app->singleton(AdminController::class, static fn (Application $app): AdminContr
     $app->get(HealthService::class),
     $app->get(Logger::class),
     $app->get(BackupStatusService::class),
-    $app->get(OpsAlertService::class)
+    $app->get(OpsAlertService::class),
+    $app->get(AccountService::class),
+    $app->get(Validator::class)
 ));
 
 $app->singleton(ReportController::class, static fn (Application $app): ReportController => new ReportController(
