@@ -27,20 +27,29 @@ $view->layout('layouts/base', [
     </div>
 
     <div class="id-preview-grid">
-        <div class="generated-card-shell">
-            <img src="data:image/png;base64,<?= e($card['image_data'] ?? '') ?>" alt="Generated student ID" class="img-fluid rounded shadow">
+        <div>
+            <div class="generated-card-shell">
+                <img src="data:image/png;base64,<?= e($card['image_data'] ?? '') ?>" alt="Generated student ID" class="img-fluid rounded shadow">
+            </div>
             <div class="generated-card-meta">
                 <span class="generated-card-chip">Generated at <?= e($card['generated_at'] ?? '') ?></span>
                 <span class="generated-card-chip">Enrollment: <?= e($student['enrollment_status']) ?></span>
                 <span class="generated-card-chip">Workflow: <?= e($student['latest_status']) ?></span>
             </div>
         </div>
-        <aside class="detail-card detail-card--summary">
+        <aside class="id-preview-aside">
             <div class="detail-card__eyebrow">Issued card details</div>
             <h3>Record summary</h3>
             <div class="preview-chip-row">
                 <span class="status-badge status-badge--<?= e(status_slug($student['enrollment_status'])) ?>"><?= e($student['enrollment_status']) ?></span>
                 <span class="status-badge status-badge--<?= e(status_slug($student['latest_status'])) ?>"><?= e($student['latest_status']) ?></span>
+            </div>
+            <div class="id-preview-aside__brand">
+                <img src="/assets/branding/bcp-logo.png" alt="Bestlink College of the Philippines logo">
+                <div>
+                    <strong>Official Bestlink student card</strong>
+                    <span>Cleaned up for clearer print balance, easier barcode scans, and a more readable student identity block.</span>
+                </div>
             </div>
             <dl class="detail-list detail-list--compact">
                 <div><dt>Institution</dt><dd>Bestlink College of the Philippines</dd></div>

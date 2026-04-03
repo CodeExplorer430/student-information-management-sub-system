@@ -91,66 +91,77 @@ final class IdCardService
      */
     private function drawBaseCard(\GdImage $canvas, array $student): void
     {
-        $navy = $this->allocateColor($canvas, 24, 54, 88);
-        $navyDeep = $this->allocateColor($canvas, 15, 35, 58);
-        $royal = $this->allocateColor($canvas, 53, 87, 164);
-        $royalMuted = $this->allocateColor($canvas, 72, 103, 184);
-        $gold = $this->allocateColor($canvas, 236, 179, 50);
+        $navy = $this->allocateColor($canvas, 19, 40, 72);
+        $navyDeep = $this->allocateColor($canvas, 11, 28, 53);
+        $royal = $this->allocateColor($canvas, 28, 92, 182);
+        $royalSoft = $this->allocateColor($canvas, 68, 111, 196);
+        $gold = $this->allocateColor($canvas, 237, 165, 33);
         $white = $this->allocateColor($canvas, 255, 255, 255);
-        $ink = $this->allocateColor($canvas, 28, 43, 59);
-        $muted = $this->allocateColor($canvas, 101, 117, 135);
-        $softSurface = $this->allocateColor($canvas, 244, 247, 251);
-        $panelBorder = $this->allocateColor($canvas, 221, 229, 237);
-        $footerText = $this->allocateColor($canvas, 217, 228, 240);
+        $ink = $this->allocateColor($canvas, 31, 45, 66);
+        $muted = $this->allocateColor($canvas, 108, 124, 143);
+        $panelBorder = $this->allocateColor($canvas, 215, 224, 233);
+        $surface = $this->allocateColor($canvas, 246, 249, 252);
+        $blueText = $this->allocateColor($canvas, 214, 228, 245);
+        $teal = $this->allocateColor($canvas, 41, 128, 120);
+        $green = $this->allocateColor($canvas, 40, 167, 69);
+        $red = $this->allocateColor($canvas, 218, 48, 55);
 
-        $this->fillRoundedRectangle($canvas, 20, 20, self::CARD_WIDTH - 20, self::CARD_HEIGHT - 20, 30, $white);
-        $this->drawRoundedBorder($canvas, 20, 20, self::CARD_WIDTH - 20, self::CARD_HEIGHT - 20, 30, $panelBorder, 2);
+        $this->fillRoundedRectangle($canvas, 24, 24, self::CARD_WIDTH - 24, self::CARD_HEIGHT - 24, 30, $white);
+        $this->drawRoundedBorder($canvas, 24, 24, self::CARD_WIDTH - 24, self::CARD_HEIGHT - 24, 30, $panelBorder, 2);
 
-        imagefilledrectangle($canvas, 20, 20, self::CARD_WIDTH - 20, 160, $navyDeep);
-        imagefilledrectangle($canvas, 20, 160, 298, self::CARD_HEIGHT - 20, $royal);
-        imagefilledrectangle($canvas, 298, 160, self::CARD_WIDTH - 20, self::CARD_HEIGHT - 20, $softSurface);
+        imagefilledrectangle($canvas, 42, 42, self::CARD_WIDTH - 42, 166, $navyDeep);
+        imagefilledrectangle($canvas, 42, 166, 292, self::CARD_HEIGHT - 42, $royalSoft);
+        imagefilledrectangle($canvas, 292, 166, self::CARD_WIDTH - 42, self::CARD_HEIGHT - 42, $surface);
+        imagefilledrectangle($canvas, 42, 166, self::CARD_WIDTH - 42, 174, $gold);
+        imagefilledpolygon($canvas, [874, 42, 1038, 42, 1038, 160], $red);
+        imagefilledpolygon($canvas, [904, 42, 1038, 42, 1038, 120], $white);
 
-        imagefilledellipse($canvas, 960, 88, 78, 78, $this->allocateColor($canvas, 232, 239, 247));
-        $this->drawText($canvas, 'BC', 23, 960, 96, $navy, true, 'center');
+        $this->drawText($canvas, 'Bestlink College', 23, 74, 82, $white, true);
+        $this->drawText($canvas, 'of the Philippines', 18, 74, 108, $blueText, true);
+        $this->drawText($canvas, 'Official student identification card', 11, 74, 132, $this->allocateColor($canvas, 190, 204, 219), false);
+        $this->drawText($canvas, 'Student lifecycle and registrar operations', 10, 74, 150, $this->allocateColor($canvas, 176, 191, 210), false);
 
-        $this->drawText($canvas, 'Bestlink College', 24, 34, 52, $white, true);
-        $this->drawText($canvas, 'of the Philippines', 18, 34, 82, $this->allocateColor($canvas, 233, 240, 248), true);
-        $this->drawText($canvas, 'Official student identification card', 11, 34, 110, $this->allocateColor($canvas, 214, 225, 238), false);
-        $this->drawText($canvas, 'Student lifecycle and registrar operations', 10, 34, 130, $this->allocateColor($canvas, 180, 196, 214), false);
+        $this->drawText($canvas, 'Academic Year', 11, 724, 78, $blueText, true);
+        $this->drawText($canvas, $this->academicYearLabel(), 18, 724, 106, $white, true);
+        $this->drawText($canvas, 'Student Number', 11, 724, 132, $blueText, true);
+        $this->drawText($canvas, (string) ($student['student_number'] ?? ''), 18, 724, 156, $white, true);
 
-        $this->fillRoundedRectangle($canvas, 316, 186, 538, 248, 18, $royalMuted);
-        $this->drawText($canvas, strtoupper((string) ($student['department'] ?? 'PROGRAM')), 24, 342, 225, $white, true);
-        $this->drawText($canvas, $this->truncate((string) ($student['program'] ?? ''), 28), 10, 342, 244, $this->allocateColor($canvas, 228, 235, 247), false);
+        $this->drawText($canvas, '2002', 15, 988, 78, $navyDeep, true, 'center');
+        $this->drawInstitutionLogo($canvas, 914, 80, 74, 78);
 
-        $this->drawText($canvas, 'Academic Year', 10, 742, 66, $this->allocateColor($canvas, 192, 207, 223), true);
-        $this->drawText($canvas, $this->academicYearLabel(), 18, 742, 94, $white, true);
-        $this->drawText($canvas, 'Student Number', 10, 742, 120, $this->allocateColor($canvas, 192, 207, 223), true);
-        $this->drawText($canvas, (string) ($student['student_number'] ?? ''), 17, 742, 146, $white, true);
+        $this->fillRoundedRectangle($canvas, 74, 202, 252, 456, 24, $white);
+        $this->drawRoundedBorder($canvas, 74, 202, 252, 456, 24, $gold, 4);
+        $this->drawStudentPhoto($canvas, $student, 86, 214, 154, 230, $white, $muted, $royal);
 
-        $this->fillRoundedRectangle($canvas, 52, 188, 266, 446, 26, $white);
-        $this->drawRoundedBorder($canvas, 52, 188, 266, 446, 26, $gold, 4);
-        $this->drawStudentPhoto($canvas, $student, 66, 202, 186, 230, $white, $muted, $royalMuted);
+        $this->fillRoundedRectangle($canvas, 322, 202, 566, 268, 18, $royal);
+        $this->drawText($canvas, strtoupper($this->truncate((string) ($student['department'] ?? 'PROGRAM'), 16)), 22, 350, 238, $white, true);
+        $this->drawText($canvas, $this->truncate((string) ($student['program'] ?? ''), 34), 10, 350, 256, $this->allocateColor($canvas, 226, 235, 248), false);
 
-        $this->fillRoundedRectangle($canvas, 316, 278, 1016, 410, 22, $white);
-        $this->drawRoundedBorder($canvas, 316, 278, 1016, 410, 22, $panelBorder, 2);
-        $this->drawText($canvas, $this->truncate(trim((string) (($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? ''))), 28), 32, 350, 326, $ink, true);
-        $this->drawText($canvas, (string) ($student['student_number'] ?? ''), 18, 350, 356, $navy, true);
-        $this->drawText($canvas, $this->truncate((string) ($student['program'] ?? ''), 42), 13, 350, 382, $muted, false);
-        $this->drawText($canvas, 'Year ' . ($student['year_level'] ?? '') . ' • ' . ($student['department'] ?? ''), 13, 350, 404, $muted, true);
+        $this->fillRoundedRectangle($canvas, 322, 294, 982, 410, 22, $white);
+        $this->drawRoundedBorder($canvas, 322, 294, 982, 410, 22, $panelBorder, 2);
+        $this->drawText($canvas, $this->truncate(trim((string) (($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? ''))), 30), 30, 352, 330, $ink, true);
+        $this->drawText($canvas, (string) ($student['student_number'] ?? ''), 17, 352, 358, $navy, true);
+        $this->drawText($canvas, $this->truncate((string) ($student['program'] ?? ''), 44), 13, 352, 382, $muted, false);
+        $this->drawText($canvas, 'Year ' . ($student['year_level'] ?? '') . ' - ' . ($student['department'] ?? ''), 13, 352, 398, $muted, false);
 
-        $this->fillRoundedRectangle($canvas, 316, 430, 774, 548, 22, $white);
-        $this->drawRoundedBorder($canvas, 316, 430, 774, 548, 22, $panelBorder, 2);
-        $this->drawText($canvas, 'Student Number Barcode', 11, 346, 462, $muted, true);
+        $this->fillRoundedRectangle($canvas, 322, 436, 748, 576, 20, $white);
+        $this->drawRoundedBorder($canvas, 322, 436, 748, 576, 20, $panelBorder, 2);
+        $this->drawText($canvas, 'Student Number Barcode', 11, 352, 466, $muted, true);
 
-        $this->fillRoundedRectangle($canvas, 804, 430, 1016, 626, 22, $white);
-        $this->drawRoundedBorder($canvas, 804, 430, 1016, 626, 22, $panelBorder, 2);
-        $this->drawText($canvas, 'Verification QR', 11, 832, 462, $muted, true);
+        $this->fillRoundedRectangle($canvas, 776, 436, 982, 576, 20, $white);
+        $this->drawRoundedBorder($canvas, 776, 436, 982, 576, 20, $panelBorder, 2);
+        $this->drawText($canvas, 'Verification QR', 11, 806, 466, $muted, true);
 
-        $this->fillRoundedRectangle($canvas, 52, 566, 760, 628, 24, $navy);
-        $this->drawText($canvas, $this->truncate(trim((string) (($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? ''))), 26), 24, 84, 604, $white, true);
-        $this->drawText($canvas, $this->truncate((string) ($student['program'] ?? ''), 46), 12, 84, 624, $footerText, false);
-        $this->drawText($canvas, strtoupper((string) ($student['enrollment_status'] ?? 'Active')), 12, 728, 592, $gold, true, 'right');
-        $this->drawText($canvas, strtoupper((string) ($student['latest_status'] ?? 'Pending')), 12, 728, 614, $footerText, true, 'right');
+        $this->fillRoundedRectangle($canvas, 748, 592, 844, 622, 14, $green);
+        $this->fillRoundedRectangle($canvas, 856, 592, 958, 622, 14, $teal);
+        $this->drawText($canvas, strtoupper((string) ($student['enrollment_status'] ?? 'Active')), 8, 796, 611, $white, true, 'center');
+        $this->drawText($canvas, strtoupper((string) ($student['latest_status'] ?? 'Pending')), 8, 907, 611, $white, true, 'center');
+
+        $this->fillRoundedRectangle($canvas, 74, 588, 760, 628, 20, $navy);
+        $this->drawText($canvas, $this->truncate(trim((string) (($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? ''))), 28), 20, 102, 610, $white, true);
+        $this->drawText($canvas, $this->truncate((string) ($student['program'] ?? ''), 48), 11, 102, 625, $this->allocateColor($canvas, 217, 227, 238), false);
+
+        imagefilledrectangle($canvas, 42, self::CARD_HEIGHT - 52, self::CARD_WIDTH - 42, self::CARD_HEIGHT - 42, $navyDeep);
     }
 
     /**
@@ -239,9 +250,12 @@ final class IdCardService
         $qrImage = $qrRenderer->render($payload);
 
         if ($qrImage instanceof \GdImage) {
-            imagecopyresampled($canvas, $qrImage, 852, 480, 0, 0, 116, 116, imagesx($qrImage), imagesy($qrImage));
+            imagecopyresampled($canvas, $qrImage, 840, 466, 0, 0, 80, 80, imagesx($qrImage), imagesy($qrImage));
             imagedestroy($qrImage);
         }
+
+        $muted = $this->allocateColor($canvas, 90, 104, 120);
+        $this->drawText($canvas, 'Scan to verify', 8, 879, 560, $muted, false, 'center');
     }
 
     private function drawBarcode(\GdImage $canvas, string $payload): void
@@ -251,14 +265,53 @@ final class IdCardService
         $barcodeImage = imagecreatefromstring($barcode);
 
         if ($barcodeImage instanceof \GdImage) {
-            imagecopyresampled($canvas, $barcodeImage, 348, 474, 0, 0, 394, 48, imagesx($barcodeImage), imagesy($barcodeImage));
+            imagecopyresampled($canvas, $barcodeImage, 350, 486, 0, 0, 370, 44, imagesx($barcodeImage), imagesy($barcodeImage));
             imagedestroy($barcodeImage);
         }
 
         $ink = $this->allocateColor($canvas, 34, 49, 63);
-        $muted = $this->allocateColor($canvas, 90, 104, 120);
-        $this->drawText($canvas, $payload, 15, 545, 538, $ink, true, 'center');
-        $this->drawText($canvas, 'Scan for record verification', 10, 910, 614, $muted, false, 'center');
+        $this->drawText($canvas, $payload, 14, 535, 556, $ink, true, 'center');
+    }
+
+    private function drawInstitutionLogo(\GdImage $canvas, int $x, int $y, int $targetWidth, int $targetHeight): void
+    {
+        $logoPath = dirname(__DIR__, 2) . '/public/assets/branding/bcp-logo.png';
+
+        if (!file_exists($logoPath)) {
+            return;
+        }
+
+        $logo = @imagecreatefrompng($logoPath);
+
+        if (!$logo instanceof \GdImage) {
+            return;
+        }
+
+        imagealphablending($canvas, true);
+        imagesavealpha($logo, true);
+
+        $sourceWidth = imagesx($logo);
+        $sourceHeight = imagesy($logo);
+        $scale = min($targetWidth / max($sourceWidth, 1), $targetHeight / max($sourceHeight, 1));
+        $renderWidth = (int) round($sourceWidth * $scale);
+        $renderHeight = (int) round($sourceHeight * $scale);
+        $offsetX = $x + (int) floor(($targetWidth - $renderWidth) / 2);
+        $offsetY = $y + (int) floor(($targetHeight - $renderHeight) / 2);
+
+        imagecopyresampled(
+            $canvas,
+            $logo,
+            $offsetX,
+            $offsetY,
+            0,
+            0,
+            $renderWidth,
+            $renderHeight,
+            $sourceWidth,
+            $sourceHeight
+        );
+
+        imagedestroy($logo);
     }
 
     private function drawText(

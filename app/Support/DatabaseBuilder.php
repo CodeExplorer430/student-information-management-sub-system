@@ -92,15 +92,27 @@ final class DatabaseBuilder
     public static function summary(PDO $database, string $driver, string $databaseName): string
     {
         $missingTables = self::missingRequiredTables($database);
-        if ($missingTables !== []) {
-            return implode(PHP_EOL, [
+        $missingColumns = self::missingRequiredColumns($database);
+
+        if ($missingTables !== [] || $missingColumns !== []) {
+            $lines = [
                 sprintf('Driver: %s', $driver),
                 sprintf('Database: %s', $databaseName),
                 'Schema Health: outdated',
-                'Missing tables: ' . implode(', ', $missingTables),
-                'Required action: run composer migrate or composer reset-db',
-                '',
-            ]);
+            ];
+
+            if ($missingTables !== []) {
+                $lines[] = 'Missing tables: ' . implode(', ', $missingTables);
+            }
+
+            if ($missingColumns !== []) {
+                $lines[] = 'Missing columns: ' . implode(', ', self::flattenMissingColumns($missingColumns));
+            }
+
+            $lines[] = 'Required action: run composer migrate or composer reset-db';
+            $lines[] = '';
+
+            return implode(PHP_EOL, $lines);
         }
 
         $userCount = (int) self::query($database, 'SELECT COUNT(*) FROM users')->fetchColumn();
@@ -149,10 +161,17 @@ final class DatabaseBuilder
             $database->query('SELECT 1');
             $lines[] = 'Database Connectivity: ok';
             $lines[] = 'Schema Required Tables: ' . implode(', ', self::requiredTables());
+            $lines[] = 'Schema Required Columns: ' . implode(', ', self::flattenMissingColumns(self::requiredColumns()));
             $missingTables = self::missingRequiredTables($database);
-            $lines[] = 'Schema Health: ' . ($missingTables === [] ? 'ok' : 'outdated');
+            $missingColumns = self::missingRequiredColumns($database);
+            $lines[] = 'Schema Health: ' . ($missingTables === [] && $missingColumns === [] ? 'ok' : 'outdated');
             if ($missingTables !== []) {
                 $lines[] = 'Schema Missing Tables: ' . implode(', ', $missingTables);
+            }
+            if ($missingColumns !== []) {
+                $lines[] = 'Schema Missing Columns: ' . implode(', ', self::flattenMissingColumns($missingColumns));
+            }
+            if ($missingTables !== [] || $missingColumns !== []) {
                 $lines[] = 'Schema Action: run composer migrate or composer reset-db';
             }
         } catch (\Throwable $exception) {
@@ -511,6 +530,16 @@ final class DatabaseBuilder
         self::ensureColumn(
             $database,
             $driver,
+            'users',
+            'photo_path',
+            $driver === 'mysql'
+                ? 'ALTER TABLE users ADD COLUMN photo_path VARCHAR(255) DEFAULT NULL AFTER password_hash'
+                : 'ALTER TABLE users ADD COLUMN photo_path TEXT DEFAULT NULL'
+        );
+
+        self::ensureColumn(
+            $database,
+            $driver,
             'student_requests',
             'priority',
             $driver === 'mysql'
@@ -563,6 +592,58 @@ final class DatabaseBuilder
         $existingTables = self::existingTables($database);
 
         return array_values(array_diff(self::requiredTables(), $existingTables));
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    public static function requiredColumns(): array
+    {
+        return [
+            'users' => ['mobile_phone', 'photo_path'],
+            'student_requests' => ['priority', 'due_at', 'resolution_summary'],
+        ];
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    public static function missingRequiredColumns(PDO $database): array
+    {
+        $driver = self::driverName($database);
+        $missing = [];
+
+        foreach (self::requiredColumns() as $table => $columns) {
+            if (!self::tableExists($database, $table)) {
+                continue;
+            }
+
+            foreach ($columns as $column) {
+                if (!self::columnExists($database, $driver, $table, $column)) {
+                    $missing[$table] ??= [];
+                    $missing[$table][] = $column;
+                }
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
+     * @param array<string, list<string>> $columns
+     * @return list<string>
+     */
+    public static function flattenMissingColumns(array $columns): array
+    {
+        $flattened = [];
+
+        foreach ($columns as $table => $tableColumns) {
+            foreach ($tableColumns as $column) {
+                $flattened[] = sprintf('%s.%s', $table, $column);
+            }
+        }
+
+        return $flattened;
     }
 
     /**
