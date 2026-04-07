@@ -3074,3 +3074,232 @@ html[data-motion="reduced"] *::after {
         position: static;
     }
 }
+
+/* Final shared UI polish */
+body.authenticated-shell .sidebar-nav {
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+body.authenticated-shell .sidebar-footer {
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.18));
+}
+
+.nav-item:focus-visible,
+.account-menu-link:focus-visible,
+.shell-toggle:focus-visible,
+.accessibility-trigger:focus-visible,
+.btn:focus-visible {
+    outline: 3px solid rgba(39, 135, 214, 0.35);
+    outline-offset: 3px;
+}
+
+.top-bar .page-heading > div {
+    min-width: 0;
+}
+
+.page-heading h1,
+.page-heading p,
+.app-page-header__copy h2,
+.app-page-header__copy p {
+    overflow-wrap: anywhere;
+}
+
+.app-section {
+    background: rgba(255, 255, 255, 0.97);
+}
+
+.app-section__body {
+    display: grid;
+    gap: 1.4rem;
+}
+
+.app-section__body > .app-feature-grid,
+.app-section__body > .app-filter-card,
+.app-section__body > .app-form-card,
+.app-section__body > .app-table-card {
+    margin-top: 0 !important;
+}
+
+.app-page-header__copy {
+    max-width: 68ch;
+}
+
+.app-page-header__actions .btn {
+    white-space: nowrap;
+}
+
+.app-feature-grid {
+    margin-bottom: 0;
+}
+
+.app-feature-card {
+    height: 100%;
+}
+
+.app-filter-card,
+.app-form-card,
+.app-table-card,
+.dashboard-card {
+    overflow: hidden;
+}
+
+.app-filter-card .card-body,
+.app-form-card .card-body {
+    padding: 1.35rem;
+}
+
+.app-filter-card .form-label,
+.app-form-card .form-label {
+    margin-bottom: 0.45rem;
+    color: #2c4359;
+}
+
+.app-filter-card .form-control,
+.app-filter-card .form-select,
+.app-form-card .form-control,
+.app-form-card .form-select,
+.app-form-card textarea {
+    border-color: #d5e0eb;
+    border-radius: 0.85rem;
+    min-height: 2.85rem;
+}
+
+.app-filter-card .form-control:focus,
+.app-filter-card .form-select:focus,
+.app-form-card .form-control:focus,
+.app-form-card .form-select:focus,
+.app-form-card textarea:focus {
+    border-color: rgba(39, 135, 214, 0.58);
+    box-shadow: 0 0 0 0.22rem rgba(39, 135, 214, 0.13);
+}
+
+.app-table-shell {
+    border-radius: inherit;
+}
+
+.app-table-shell table,
+.dashboard-card .table-responsive table {
+    min-width: 760px;
+}
+
+.app-table-shell tbody tr,
+.dashboard-card .table tbody tr {
+    transition: background-color 0.16s ease;
+}
+
+.app-table-shell tbody tr:hover,
+.dashboard-card .table tbody tr:hover {
+    background: rgba(39, 135, 214, 0.045);
+}
+
+.app-table-shell td .small,
+.dashboard-card td .small {
+    line-height: 1.45;
+}
+
+.status-badge {
+    min-height: 2rem;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.dashboard-summary-card,
+.dashboard-card {
+    height: 100%;
+}
+
+.dashboard-summary-card__foot,
+.dashboard-activity-item__meta,
+.dashboard-activity-item__text {
+    line-height: 1.45;
+}
+
+.dashboard-card .card-header {
+    min-height: 5.7rem;
+}
+
+.dashboard-card .table-responsive {
+    border-radius: 0 0 24px 24px;
+}
+
+.login-form-panel__surface {
+    width: min(100%, 27rem);
+    margin: 0 auto;
+}
+
+html[data-contrast="high"] .app-section,
+html[data-contrast="high"] .app-feature-card,
+html[data-contrast="high"] .app-filter-card,
+html[data-contrast="high"] .app-form-card,
+html[data-contrast="high"] .app-table-card,
+html[data-contrast="high"] .dashboard-summary-card {
+    border-color: #93a7bc;
+    box-shadow: none;
+}
+
+@media (max-width: 991.98px) {
+    body.authenticated-shell .top-bar {
+        align-items: flex-start;
+    }
+
+    .page-heading {
+        width: 100%;
+    }
+
+    .user-info {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .app-page-header__actions,
+    .hero-panel__actions {
+        width: 100%;
+    }
+
+    .app-page-header__actions .btn,
+    .hero-panel__actions .btn {
+        flex: 1 1 12rem;
+    }
+}
+
+@media (max-width: 575.98px) {
+    body.authenticated-shell .content-container,
+    body.authenticated-shell .top-bar {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .app-section__body,
+    .hero-panel--tabler,
+    .dashboard-card .card-body,
+    .dashboard-card .card-header {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .app-filter-card .card-body,
+    .app-form-card .card-body {
+        padding: 1rem;
+    }
+
+    .app-page-header__actions .btn,
+    .hero-panel__actions .btn,
+    .app-filter-card .btn,
+    .app-form-card .btn {
+        width: 100%;
+    }
+
+    .user-info {
+        gap: 0.65rem;
+    }
+
+    .user-info .accessibility-trigger span,
+    .account-menu-link .text-end {
+        display: none;
+    }
+
+    .page-heading__brand {
+        max-width: 100%;
+    }
+}

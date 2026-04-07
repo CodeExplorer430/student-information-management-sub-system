@@ -145,7 +145,6 @@ $bodyHtml = $view->capture(static function () use ($filters, $requestStatuses, $
         </div>
     </div>
 <?php }); ?>
-?>
 <?php $view->start('content'); ?>
 <?= $view->renderPartial('partials/components/page_section', [
     'tone' => 'blue',

@@ -55,6 +55,26 @@ The application models two separate student status concepts:
 Use `composer reset-db` when you want a clean local rebuild of the seeded demo
 state.
 
+## Database Setup And Import
+The preferred application-managed setup is:
+
+1. `composer migrate`
+2. `composer seed`
+
+Use `composer reset-db` only for a clean local rebuild because it drops and
+recreates local demo data.
+
+Direct import snapshots are also available for empty databases:
+
+- `database/import/mysql/001_schema_and_demo.sql` for MySQL/MariaDB runtime
+  imports through `mysql` or phpMyAdmin.
+- `database/import/sqlite/001_schema_and_demo.sql` for local/test-only SQLite
+  inspection.
+
+The import snapshots embed the demo password hash for `Password123!`. The
+Composer seed path hashes the configured `DEFAULT_PASSWORD` from `.env`; direct
+SQL imports do not.
+
 ## Demo Credentials
 - `admin@bcp.edu`
 - `registrar@bcp.edu`
@@ -126,6 +146,9 @@ The full operator runbook lives in `docs/deployment-checklist.md`.
 - `AGENTS.md` is intentionally gitignored and remains local-only.
 - The app runtime is MySQL and MariaDB first; SQLite remains test-only.
 - Docker is the supported path for the strict local and CI quality gate.
+- Direct database import snapshots live under `database/import`; canonical
+  schema and seed inputs remain under `database/migrations` and
+  `database/seeds`.
 - The root-level HTML mockups remain as legacy visual references unless a task
   explicitly removes them.
 - The canonical seeded dataset is 3 students: `Aira Mendoza`, `Paolo Lim`,

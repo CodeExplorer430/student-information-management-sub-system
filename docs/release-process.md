@@ -9,15 +9,17 @@ documented `Git Flow` branch model and the GitHub Actions deployment pipeline.
 2. Branch `release/<version>` from `develop`.
 3. Limit release-branch changes to stabilization, documentation, and release
    blockers.
-4. Run the full validation gate:
+4. If schema or seed SQL changes, regenerate and review the matching
+   `database/import` snapshots before validation.
+5. Run the full validation gate:
    - `composer check`
    - `composer test:e2e`
    - `bash scripts/release-check.sh` when doing an operator-driven dry run
-5. Open a pull request from `release/<version>` into `main`.
-6. After approval, merge into `main`.
-7. Tag the merged `main` commit as `v<major>.<minor>.<patch>`.
-8. Allow `deploy-vps.yml` to promote the tagged release to `production`.
-9. Merge the same release branch back into `develop`.
+6. Open a pull request from `release/<version>` into `main`.
+7. After approval, merge into `main`.
+8. Tag the merged `main` commit as `v<major>.<minor>.<patch>`.
+9. Allow `deploy-vps.yml` to promote the tagged release to `production`.
+10. Merge the same release branch back into `develop`.
 
 ## Hotfix flow
 1. Branch `hotfix/<scope>` from `main`.

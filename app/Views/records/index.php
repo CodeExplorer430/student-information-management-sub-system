@@ -114,7 +114,6 @@ $bodyHtml = $view->capture(static function () use ($filters, $departments, $reco
         </div>
     </div>
 <?php }); ?>
-?>
 <?php $view->start('content'); ?>
 <?= $view->renderPartial('partials/components/page_section', [
     'tone' => 'red',
