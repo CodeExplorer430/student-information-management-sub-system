@@ -27,5 +27,7 @@
 - Enable `SESSION_SECURE=true` when the app is served over HTTPS.
 - Keep `storage/app/private/uploads` non-public.
 - Rotate default demo credentials before any shared deployment.
+- Treat `database/import/*` as demo/local bootstrap snapshots because they embed
+  a demo password hash for `Password123!`.
 - Review logs in `storage/logs/app.log` during testing and troubleshooting.
 - Use `php bin/console backup:create`, `backup:verify`, `backup:export`, `backup:push`, `backup:remote:list`, `backup:pull`, `backup:import`, `backup:drill`, `backup:prune`, `php bin/console env:check`, `php bin/console health:check`, `bash scripts/deployment-smoke.sh`, and `docs/deployment-checklist.md` as the primary shared-deployment verification and recovery flow.

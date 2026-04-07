@@ -14,6 +14,7 @@ The application follows a clean MVC structure:
 - Runtime and local development use MySQL/MariaDB through PDO.
 - SQLite is retained for unit/integration tests and the isolated acceptance-test runner to keep automated checks off the live MySQL dataset.
 - Schema creation and seeding are driven by `bin/console`, which emits driver-specific DDL for MySQL and the test-only SQLite path.
+- Direct import snapshots live under `database/import` for empty-database setup; canonical schema/data changes still belong in `database/migrations` and `database/seeds`.
 - RBAC is now backed by `roles`, `permissions`, `role_permissions`, and `user_roles`, while `users.role` is kept as the derived primary display role for UI/dashboard decisions.
 - `php bin/console db:summary` exposes the active driver/database and the current seeded student set for quick runtime verification.
 - `php bin/console env:check` reports DB connectivity, required PHP extensions, writable storage paths, and local frontend asset presence.

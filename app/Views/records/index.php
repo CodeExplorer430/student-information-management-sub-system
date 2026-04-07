@@ -3,6 +3,7 @@
 /** @var list<AcademicRecordRow> $records */
 /** @var array<string, string> $filters */
 /** @var array<int, string> $departments */
+/** @var array{page: int, per_page: int, total: int, page_count: int, from: int, to: int} $pagination */
 /** @var \App\Core\ViewContext $view */
 
 $appName = $app['name'];
@@ -11,7 +12,16 @@ $view->layout('layouts/base', [
     'pageTitle' => 'Academic Records Viewer',
     'pageDescription' => 'Access historical subjects and grades for authorized users.',
 ]);
-$bodyHtml = $view->capture(static function () use ($filters, $departments, $records, $view): void { ?>
+$bodyHtml = $view->capture(static function () use ($filters, $departments, $records, $pagination, $view): void { ?>
+    <?php
+    $buildPageUrl = static function (int $page) use ($filters): string {
+        $query = $filters;
+        $query['page'] = (string) $page;
+        $query = array_filter($query, static fn ($value): bool => $value !== '');
+
+        return '/records?' . http_build_query($query);
+    };
+    ?>
     <form class="card app-filter-card mt-4" method="get" action="/records">
         <div class="card-body">
             <div class="row g-3">
@@ -35,6 +45,26 @@ $bodyHtml = $view->capture(static function () use ($filters, $departments, $reco
             </div>
         </div>
     </form>
+
+    <div class="records-pagination-toolbar">
+        <div>
+            <strong><?= e((string) $pagination['total']) ?></strong> matched records
+            <?php if ($pagination['total'] > 0): ?>
+                <span class="text-muted">Showing <?= e((string) $pagination['from']) ?>-<?= e((string) $pagination['to']) ?> on page <?= e((string) $pagination['page']) ?>.</span>
+            <?php endif; ?>
+        </div>
+        <?php if ($pagination['page_count'] > 1): ?>
+            <nav class="records-pagination" aria-label="Academic records pages">
+                <?php $previousPage = max(1, $pagination['page'] - 1); ?>
+                <?php $nextPage = min($pagination['page_count'], $pagination['page'] + 1); ?>
+                <a href="<?= e($buildPageUrl($previousPage)) ?>" class="btn btn-sm btn-outline-secondary<?= $pagination['page'] === 1 ? ' disabled' : '' ?>"<?= $pagination['page'] === 1 ? ' aria-disabled="true"' : '' ?>>Previous</a>
+                <?php for ($page = 1; $page <= $pagination['page_count']; $page++): ?>
+                    <a href="<?= e($buildPageUrl($page)) ?>" class="btn btn-sm <?= $page === $pagination['page'] ? 'btn-primary' : 'btn-outline-secondary' ?>"><?= e((string) $page) ?></a>
+                <?php endfor; ?>
+                <a href="<?= e($buildPageUrl($nextPage)) ?>" class="btn btn-sm btn-outline-secondary<?= $pagination['page'] === $pagination['page_count'] ? ' disabled' : '' ?>"<?= $pagination['page'] === $pagination['page_count'] ? ' aria-disabled="true"' : '' ?>>Next</a>
+            </nav>
+        <?php endif; ?>
+    </div>
 
     <div class="card app-table-card mt-4">
         <div class="table-responsive app-table-shell">
@@ -84,7 +114,6 @@ $bodyHtml = $view->capture(static function () use ($filters, $departments, $reco
         </div>
     </div>
 <?php }); ?>
-?>
 <?php $view->start('content'); ?>
 <?= $view->renderPartial('partials/components/page_section', [
     'tone' => 'red',

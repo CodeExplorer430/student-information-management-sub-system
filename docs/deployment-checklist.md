@@ -33,6 +33,9 @@ Point Apache at `current/public`.
 - Replace `APP_KEY=change-me`.
 - Keep `DB_DRIVER=mysql` for the real runtime.
 - Replace the demo `DEFAULT_PASSWORD`.
+- Prefer `php bin/console migrate` for deployed schema updates; use
+  `database/import/mysql/001_schema_and_demo.sql` only for an intentional empty
+  database bootstrap, not over a live database.
 - Set `BACKUP_EXPORT_KEY` before relying on encrypted backup export or import.
 - Set `BACKUP_MAX_AGE_HOURS`, `BACKUP_REMOTE_MAX_AGE_HOURS`, and
   `BACKUP_DRILL_MAX_AGE_HOURS` to the intended operating cadence.

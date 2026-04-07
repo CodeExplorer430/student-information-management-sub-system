@@ -258,6 +258,7 @@ namespace Tests\Integration {
 
             self::assertSame(['users', 'student_requests'], $tables);
             self::assertContains('ALTER TABLE users ADD COLUMN mobile_phone VARCHAR(50) DEFAULT NULL AFTER email', $database->statements);
+            self::assertContains('ALTER TABLE users ADD COLUMN photo_path VARCHAR(255) DEFAULT NULL AFTER password_hash', $database->statements);
             self::assertContains("ALTER TABLE student_requests ADD COLUMN priority VARCHAR(20) NOT NULL DEFAULT 'Normal' AFTER description", $database->statements);
             self::assertContains('ALTER TABLE student_requests ADD COLUMN due_at DATETIME DEFAULT NULL AFTER priority', $database->statements);
             self::assertContains('ALTER TABLE student_requests ADD COLUMN resolution_summary TEXT DEFAULT NULL AFTER resolved_at', $database->statements);

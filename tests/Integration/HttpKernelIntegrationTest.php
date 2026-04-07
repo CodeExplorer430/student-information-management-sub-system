@@ -15,6 +15,7 @@ use App\Services\BackupService;
 use App\Services\HealthService;
 use App\Services\IdCardService;
 use App\Services\RequestService;
+use App\Support\DatabaseBuilder;
 use RuntimeException;
 use Tests\Support\HttpIntegrationTestCase;
 
@@ -35,6 +36,11 @@ final class HttpKernelIntegrationTest extends HttpIntegrationTestCase
         self::assertArrayHasKey('X-Request-Id', $login->headers());
         self::assertStringContainsString('Secure access portal', $login->body());
         self::assertStringContainsString('Sign in to continue', $login->body());
+        self::assertStringContainsString('Bestlink SIS', $login->body());
+        self::assertStringContainsString('rel="manifest" href="/site.webmanifest"', $login->body());
+        self::assertStringContainsString('href="/favicon-32x32.png"', $login->body());
+        self::assertFileExists(dirname(__DIR__, 2) . '/public/favicon.ico');
+        self::assertFileExists(dirname(__DIR__, 2) . '/public/site.webmanifest');
 
         $invalidLogin = $this->request('POST', '/login', post: [
             '_csrf' => 'invalid-token',
@@ -75,6 +81,7 @@ final class HttpKernelIntegrationTest extends HttpIntegrationTestCase
 
         $cases = [
             ['path' => '/dashboard', 'query' => [], 'needle' => 'Governance and access oversight'],
+            ['path' => '/account', 'query' => [], 'needle' => 'My account details'],
             ['path' => '/students', 'query' => ['search' => $student['student_number']], 'needle' => 'Student profile registration'],
             ['path' => '/students/create', 'query' => [], 'needle' => 'Create a new student record'],
             ['path' => '/students/' . $student['id'], 'query' => [], 'needle' => 'Profile change history'],
@@ -88,6 +95,7 @@ final class HttpKernelIntegrationTest extends HttpIntegrationTestCase
             ['path' => '/requests/' . $requestId, 'query' => [], 'needle' => 'Request history'],
             ['path' => '/notifications', 'query' => [], 'needle' => 'Notification center'],
             ['path' => '/admin/users', 'query' => [], 'needle' => 'User role assignment'],
+            ['path' => '/admin/users/' . $admin['id'] . '/edit', 'query' => [], 'needle' => 'Admin password reset'],
             ['path' => '/admin/roles', 'query' => [], 'needle' => 'Save role permissions'],
             ['path' => '/admin/diagnostics', 'query' => [], 'needle' => 'Recent application events'],
             ['path' => '/reports', 'query' => ['dataset' => 'notifications'], 'needle' => 'Operational reporting and exports'],
@@ -341,6 +349,32 @@ final class HttpKernelIntegrationTest extends HttpIntegrationTestCase
         self::assertStringContainsString('Database migration required', $schemaResponse->body());
         self::assertStringContainsString('Run: composer migrate', $schemaResponse->body());
         self::assertArrayHasKey('X-Request-Id', $schemaResponse->headers());
+
+        $columnKernel = $this->buildSetupKernel(new class () {
+            public function connection(): \PDO
+            {
+                $database = new \PDO('sqlite::memory:');
+                $database->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
+                foreach (DatabaseBuilder::requiredTables() as $table) {
+                    $database->exec(sprintf('CREATE TABLE %s (id INTEGER PRIMARY KEY)', $table));
+                }
+
+                return $database;
+            }
+        }, [
+            'db' => [
+                'database' => 'column-drift.sqlite',
+            ],
+        ]);
+
+        $columnResponse = $columnKernel->handle('GET', '/admin/users');
+
+        self::assertSame(503, $columnResponse->status());
+        self::assertStringContainsString('Database migration required', $columnResponse->body());
+        self::assertStringContainsString('Missing columns: users.mobile_phone, users.photo_path', $columnResponse->body());
+        self::assertStringContainsString('php bin/console env:check', $columnResponse->body());
+        self::assertArrayHasKey('X-Request-Id', $columnResponse->headers());
 
         $failureKernel = $this->buildSetupKernel(new class () {
             public function connection(): never

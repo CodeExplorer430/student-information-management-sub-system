@@ -65,5 +65,6 @@ final class HealthServiceIntegrationTest extends IntegrationTestCase
         self::assertSame('database_connectivity', $ready['checks'][0]['name']);
         self::assertStringContainsString('Unable to connect to the database.', $ready['checks'][0]['message']);
         self::assertSame('schema_required_tables', $ready['checks'][1]['name']);
+        self::assertSame('schema_required_columns', $ready['checks'][2]['name']);
     }
 }

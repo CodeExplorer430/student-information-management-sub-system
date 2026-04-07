@@ -51,6 +51,27 @@ final class DatabaseBuilderIntegrationTest extends IntegrationTestCase
         self::assertStringContainsString('user_roles', $report);
     }
 
+    public function testEnvironmentReportListsMissingColumnsForOutdatedSchema(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        foreach (DatabaseBuilder::requiredTables() as $table) {
+            $database->exec(sprintf('CREATE TABLE %s (id INTEGER PRIMARY KEY)', $table));
+        }
+
+        $report = DatabaseBuilder::environmentReport(
+            $database,
+            $this->app->get(Config::class),
+            dirname(__DIR__, 2)
+        );
+
+        self::assertStringContainsString('Schema Health: outdated', $report);
+        self::assertStringContainsString('Schema Missing Columns:', $report);
+        self::assertStringContainsString('users.photo_path', $report);
+        self::assertStringContainsString('student_requests.priority', $report);
+    }
+
     public function testEnvironmentReportFlagsDeploymentReadinessFailuresForDefaultLikeSettings(): void
     {
         $database = new PDO('sqlite::memory:');
@@ -200,9 +221,26 @@ final class DatabaseBuilderIntegrationTest extends IntegrationTestCase
 
         self::assertSame([], DatabaseBuilder::missingRequiredTables($database));
         self::assertTrue($this->sqliteColumnExists($database, 'users', 'mobile_phone'));
+        self::assertTrue($this->sqliteColumnExists($database, 'users', 'photo_path'));
         self::assertTrue($this->sqliteColumnExists($database, 'student_requests', 'priority'));
         self::assertTrue($this->sqliteColumnExists($database, 'student_requests', 'due_at'));
         self::assertTrue($this->sqliteColumnExists($database, 'student_requests', 'resolution_summary'));
+    }
+
+    public function testMissingRequiredColumnsReportsSchemaDriftForExistingTables(): void
+    {
+        $database = new PDO('sqlite::memory:');
+        $database->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        foreach (DatabaseBuilder::requiredTables() as $table) {
+            $database->exec(sprintf('CREATE TABLE %s (id INTEGER PRIMARY KEY)', $table));
+        }
+
+        $missingColumns = DatabaseBuilder::missingRequiredColumns($database);
+
+        self::assertSame(['mobile_phone', 'photo_path'], $missingColumns['users'] ?? []);
+        self::assertSame(['priority', 'due_at', 'resolution_summary'], $missingColumns['student_requests'] ?? []);
+        self::assertContains('users.photo_path', DatabaseBuilder::flattenMissingColumns($missingColumns));
     }
 
     public function testSummaryAndResetCoverHealthyAndOutdatedBranches(): void
@@ -222,6 +260,17 @@ final class DatabaseBuilderIntegrationTest extends IntegrationTestCase
 
         self::assertStringContainsString('Schema Health: outdated', $outdatedSummary);
         self::assertStringContainsString('Required action: run composer migrate or composer reset-db', $outdatedSummary);
+
+        $columnDriftDatabase = new PDO('sqlite::memory:');
+        $columnDriftDatabase->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        foreach (DatabaseBuilder::requiredTables() as $table) {
+            $columnDriftDatabase->exec(sprintf('CREATE TABLE %s (id INTEGER PRIMARY KEY)', $table));
+        }
+
+        $columnDriftSummary = DatabaseBuilder::summary($columnDriftDatabase, 'sqlite', 'column-drift');
+
+        self::assertStringContainsString('Schema Health: outdated', $columnDriftSummary);
+        self::assertStringContainsString('Missing columns: users.mobile_phone, users.photo_path', $columnDriftSummary);
 
         $uploadFile = dirname(__DIR__, 2) . '/storage/app/private/uploads/test-reset.txt';
         $cardFile = dirname(__DIR__, 2) . '/storage/app/public/id-cards/test-reset.txt';

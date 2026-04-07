@@ -49,24 +49,35 @@ final class HttpKernel
             $database = $this->app->get(Database::class)->connection();
             $config = $this->app->get(Config::class);
             $missingTables = DatabaseBuilder::missingRequiredTables($database);
+            $missingColumns = DatabaseBuilder::missingRequiredColumns($database);
 
-            if ($missingTables !== []) {
+            if ($missingTables !== [] || $missingColumns !== []) {
+                $details = [];
+
+                if ($missingTables !== []) {
+                    $details[] = 'Missing tables: ' . implode(', ', $missingTables);
+                }
+
+                if ($missingColumns !== []) {
+                    $details[] = 'Missing columns: ' . implode(', ', DatabaseBuilder::flattenMissingColumns($missingColumns));
+                }
+
+                $details[] = 'Run: composer migrate';
+                $details[] = 'If you want a clean local rebuild of demo data: composer reset-db';
+                $details[] = 'Verify again with: php bin/console env:check';
+                $details[] = 'Database: ' . string_value($config->get('db.database', ''));
+
                 $this->app->get(Logger::class)->warning('HTTP request blocked by outdated schema.', [
                     'method' => $method,
                     'uri' => $uri,
                     'missing_tables' => $missingTables,
+                    'missing_columns' => DatabaseBuilder::flattenMissingColumns($missingColumns),
                 ], 'http');
 
                 throw new HttpResultException($this->setupErrorResponse(
                     'Database migration required',
                     'The application can reach the database, but the schema is behind the current codebase and still needs the latest migration.',
-                    [
-                        'Missing tables: ' . implode(', ', $missingTables),
-                        'Run: composer migrate',
-                        'If you want a clean local rebuild of demo data: composer reset-db',
-                        'Verify again with: php bin/console env:check',
-                        'Database: ' . string_value($config->get('db.database', '')),
-                    ]
+                    $details
                 ));
             }
         } catch (HttpResultException $exception) {

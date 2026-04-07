@@ -60,6 +60,15 @@ final class HealthService
                     ? 'All required tables are present.'
                     : 'Missing tables: ' . implode(', ', $missingTables),
             ];
+
+            $missingColumns = DatabaseBuilder::missingRequiredColumns($database);
+            $checks[] = [
+                'name' => 'schema_required_columns',
+                'status' => $missingColumns === [] ? 'pass' : 'fail',
+                'message' => $missingColumns === []
+                    ? 'All required columns are present.'
+                    : 'Missing columns: ' . implode(', ', DatabaseBuilder::flattenMissingColumns($missingColumns)),
+            ];
         } catch (Throwable $exception) {
             $checks[] = [
                 'name' => 'database_connectivity',
@@ -70,6 +79,11 @@ final class HealthService
                 'name' => 'schema_required_tables',
                 'status' => 'fail',
                 'message' => 'Schema health is unknown until database connectivity is restored.',
+            ];
+            $checks[] = [
+                'name' => 'schema_required_columns',
+                'status' => 'fail',
+                'message' => 'Required-column verification is unavailable until database connectivity is restored.',
             ];
         }
 

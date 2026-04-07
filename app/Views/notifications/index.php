@@ -67,7 +67,6 @@ $bodyHtml = $view->capture(static function () use ($notifications, $view): void 
         </div>
     </div>
 <?php }); ?>
-?>
 <?php $view->start('content'); ?>
 <?= $view->renderPartial('partials/components/page_section', [
     'tone' => 'purple',

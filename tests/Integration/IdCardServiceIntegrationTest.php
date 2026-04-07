@@ -102,6 +102,8 @@ final class IdCardServiceIntegrationTest extends IntegrationTestCase
         $drawText->setAccessible(true);
         $drawStudentPhoto = new ReflectionMethod(IdCardService::class, 'drawStudentPhoto');
         $drawStudentPhoto->setAccessible(true);
+        $drawInstitutionLogo = new ReflectionMethod(IdCardService::class, 'drawInstitutionLogo');
+        $drawInstitutionLogo->setAccessible(true);
         $allocateColor = new ReflectionMethod(IdCardService::class, 'allocateColor');
         $allocateColor->setAccessible(true);
 
@@ -127,6 +129,18 @@ final class IdCardServiceIntegrationTest extends IntegrationTestCase
             'last_name' => 'Student',
             'photo_path' => 'not-an-image.txt',
         ], 10, 10, 80, 100, $textColor, $textColor, $textColor);
+
+        $logoPath = dirname(__DIR__, 2) . '/public/assets/branding/bcp-logo.png';
+        $logoBackupPath = $logoPath . '.bak';
+        rename($logoPath, $logoBackupPath);
+        try {
+            $drawInstitutionLogo->invoke($service, $canvas, 10, 10, 40, 40);
+            file_put_contents($logoPath, 'invalid-png');
+            $drawInstitutionLogo->invoke($service, $canvas, 10, 10, 40, 40);
+        } finally {
+            @unlink($logoPath);
+            rename($logoBackupPath, $logoPath);
+        }
 
         self::assertGreaterThan(0, imagesx($canvas));
         imagedestroy($canvas);

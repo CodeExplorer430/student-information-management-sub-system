@@ -1,7 +1,7 @@
 # Requirements Coverage
 
 ## Summary
-The current codebase covers the major functional modules in `Need-Finals.txt` and `project-requirements.txt`, and now also includes multi-role RBAC administration, student self-service requests, richer registrar/staff queue handling, notification delivery logging, reporting/export views, local vendor assets, and an environment verification command. The one standing requirement deviation is still the approved renderer change from Twig to native PHP views. The functional and negative-path coverage is now stronger around ID issuance state, upload failure handling, security headers, session cookie policy, generated-file fallback behavior, request notes/attachments, and the reporting/notification surfaces.
+The current codebase covers the major functional modules in `Need-Finals.txt` and `project-requirements.txt`, and now also includes multi-role RBAC administration, student self-service requests, richer registrar/staff queue handling, notification delivery logging, reporting/export views, local vendor assets, database import snapshots, and an environment verification command. The one standing requirement deviation is still the approved renderer change from Twig to native PHP views. The functional and negative-path coverage is now stronger around ID issuance state, upload failure handling, security headers, session cookie policy, generated-file fallback behavior, request notes/attachments, and the reporting/notification surfaces.
 
 ## project-requirements.txt
 | Requirement | Status | Notes |
@@ -17,6 +17,7 @@ The current codebase covers the major functional modules in `Need-Finals.txt` an
 | Operational workflow depth | Implemented | Requests now support priority, SLA target dates, resolution summaries, notes, attachments, and delivery-backed notifications. |
 | PHP 8.4+, AltoRouter, PDO, Composer, PSR-4, PHPStan, PHP CS Fixer, Whoops, PHPUnit, Roave | Implemented | Present in the app stack and validation workflow. |
 | MariaDB/MySQL runtime | Implemented | Runtime targets MySQL/MariaDB; SQLite remains test-only. |
+| Direct SQL import snapshots | Implemented | Empty-database MySQL/MariaDB and local/test-only SQLite import snapshots are available under `database/import`. |
 | Twig templating | Intentionally deviated | Replaced with native PHP views by approved direction change. |
 | Codeception for form/integration-style coverage | Implemented | Codeception covers end-to-end browser flows; PHPUnit covers unit and integration behavior. |
 
@@ -36,10 +37,12 @@ The current codebase covers the major functional modules in `Need-Finals.txt` an
 | Status progress bar | Implemented | Present on the status timeline view. |
 | Table view and timeline view | Implemented | Both are present. |
 | Download and print for ID generation | Implemented | Preview, download, and print trigger exist. |
-| UI/UX design for the ID and barcode | Implemented, polish ongoing | Functional and styled, with responsive shell, collapsible sidebar, toasts, and Tabler-driven dashboards now in place. |
+| UI/UX design for the ID and barcode | Implemented | Functional and styled, with responsive shell, collapsible sidebar, toasts, Tabler-driven dashboards, and final shared module polish now in place. |
 
 ## Test Coverage Status
 The strict quality gate now enforces `100%` PHPUnit coverage for lines, methods, and classes across handwritten runtime code in `app/`, `public/`, and `bin/console`. PHPUnit coverage now includes in-process route/controller/view coverage plus a testable console kernel, while Codeception acceptance coverage remains required in `composer check` but is not part of the numeric PHPUnit threshold. `composer check` now runs through the repo-owned validator container so the full gate uses the same PHP 8.4 plus Xdebug runtime locally and in CI.
+
+Latest local validation after the shared UI polish and database import documentation pass completed successfully through `composer check`, including PHP CS Fixer dry-run, PHPStan, PHPUnit coverage at `100%` for classes, methods, and lines, Codeception acceptance coverage, and Composer dependency audit.
 
 ### Currently covered
 - login success, invalid-CSRF rejection, and protected-route guest redirects
@@ -59,5 +62,5 @@ The strict quality gate now enforces `100%` PHPUnit coverage for lines, methods,
 - validator behavior and repository search baseline
 
 ### Remaining explicit gaps
-- UI polish and branding consistency can continue to improve, but the functional requirement set is covered
+- No local functional requirement gaps remain in the implemented modules
 - deployment smoke execution against the real Apache/XAMPP or production URL remains an operator-run step through `bash scripts/deployment-smoke.sh`, not part of the default local validator gate

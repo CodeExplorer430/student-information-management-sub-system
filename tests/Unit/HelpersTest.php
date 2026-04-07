@@ -104,4 +104,35 @@ final class HelpersTest extends TestCase
         self::assertSame('JD', user_initials('Jane Doe'));
         self::assertSame('U', user_initials('   '));
     }
+
+    public function testPrivateUploadHelperReturnsDataUriOnlyForReadableImages(): void
+    {
+        $uploadsPath = dirname(__DIR__, 2) . '/storage/app/private/uploads';
+        $imageName = 'helper-avatar-test.png';
+        $emptyName = 'helper-avatar-empty.png';
+        $textName = 'helper-avatar-test.txt';
+
+        file_put_contents(
+            $uploadsPath . '/' . $imageName,
+            base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Z0GQAAAAASUVORK5CYII=', true)
+        );
+        file_put_contents($uploadsPath . '/' . $emptyName, '');
+        file_put_contents($uploadsPath . '/' . $textName, 'plain text');
+
+        try {
+            self::assertSame('', private_upload_data_uri(''));
+            self::assertSame('', private_upload_data_uri('missing-image.png'));
+            self::assertSame('', private_upload_data_uri($emptyName));
+            self::assertSame('', private_upload_data_uri($textName));
+
+            $dataUri = private_upload_data_uri($imageName);
+
+            self::assertStringStartsWith('data:image/png;base64,', $dataUri);
+            self::assertNotSame('', $dataUri);
+        } finally {
+            @unlink($uploadsPath . '/' . $imageName);
+            @unlink($uploadsPath . '/' . $emptyName);
+            @unlink($uploadsPath . '/' . $textName);
+        }
+    }
 }
