@@ -612,6 +612,9 @@ final class ViewTemplateCoverageIntegrationTest extends IntegrationTestCase
         self::assertStringContainsString('Previous', $recordsIndexPaginated);
         self::assertStringContainsString('data-tab-list', $rolesView);
         self::assertStringContainsString('role-tab-faculty', $rolesView);
+        self::assertStringContainsString('Role registry', $rolesView);
+        self::assertStringContainsString('Create role', $rolesView);
+        self::assertStringContainsString('Save role details', $rolesView);
         self::assertStringContainsString('data-tab-list', $diagnosticsView);
         self::assertStringContainsString('diagnostics-tab-attention', $diagnosticsView);
         self::assertStringContainsString('Items that need action', $diagnosticsView);

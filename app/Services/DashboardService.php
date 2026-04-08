@@ -31,11 +31,12 @@ final class DashboardService
     public function overview(?array $user = null, ?array $studentRecord = null): array
     {
         $role = (string) ($user['role'] ?? 'guest');
-        $requestCounts = $this->requests->countByStatus($studentRecord !== null && $role === 'student' ? (int) $studentRecord['id'] : null);
+        $dashboardRole = $studentRecord !== null ? 'student' : $role;
+        $requestCounts = $this->requests->countByStatus($studentRecord !== null ? (int) $studentRecord['id'] : null);
         $profileCompleteness = $studentRecord !== null ? $this->profileCompleteness($studentRecord) : null;
 
         return [
-            'role' => $role,
+            'role' => $dashboardRole,
             'studentCount' => $this->students->count(),
             'userCount' => $this->users->count(),
             'workflowStatusCounts' => $this->students->countByStatus(),
@@ -46,7 +47,7 @@ final class DashboardService
             'overdueRequestCount' => $this->requests->countOverdue(),
             'notificationUnreadCount' => $user !== null ? $this->notifications->unreadCount((int) ($user['id'] ?? 0)) : 0,
             'notificationDeliverySummary' => $this->notifications->deliverySummary(),
-            'recentRequests' => $this->requests->recent(8, $studentRecord !== null && $role === 'student' ? (int) $studentRecord['id'] : null),
+            'recentRequests' => $this->requests->recent(8, $studentRecord !== null ? (int) $studentRecord['id'] : null),
             'roleOverview' => $this->roles->allRoles(),
             'studentRecord' => $studentRecord,
             'profileCompleteness' => $profileCompleteness,

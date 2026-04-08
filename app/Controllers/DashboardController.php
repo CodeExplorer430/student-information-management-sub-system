@@ -26,11 +26,21 @@ final class DashboardController
         $this->response->view('dashboard/index', [
             'overview' => $this->dashboard->overview(
                 $this->auth->user(),
-                $this->auth->primaryRole() === 'student'
+                $this->usesOwnStudentDashboardScope()
                     ? $this->students->findByEmail((string) ($this->auth->user()['email'] ?? ''))
                     : null
             ),
             'notifications' => $this->auth->id() !== null ? $this->notifications->forUser((int) $this->auth->id()) : [],
         ]);
+    }
+
+    private function usesOwnStudentDashboardScope(): bool
+    {
+        return (
+            $this->auth->can('students.view_own')
+            || $this->auth->can('records.view_own')
+            || $this->auth->can('statuses.view_own')
+            || $this->auth->can('id_cards.view_own')
+        ) && !$this->auth->can('students.view');
     }
 }

@@ -17,13 +17,18 @@ INSERT INTO permissions (code, label, module, description, created_at, updated_a
     ('dashboard.view_operations', 'View operations dashboard', 'dashboard', 'Access the registrar/staff operations dashboard.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('dashboard.view_student', 'View student dashboard', 'dashboard', 'Access the student self-service dashboard.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('students.view', 'View student profiles', 'students', 'View student profile records.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('students.view_own', 'View own student profile', 'students', 'View only the signed-in student profile record.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('students.create', 'Register student profiles', 'students', 'Create student profile records.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('students.update', 'Update student profiles', 'students', 'Update student profile records.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('students.update_own', 'Update own student profile', 'students', 'Update only the signed-in student profile record.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('records.view', 'View academic records', 'records', 'View academic record data.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('records.view_own', 'View own academic records', 'records', 'View only the signed-in student academic records.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('statuses.view', 'View status tracking', 'statuses', 'View workflow and enrollment status boards.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('statuses.view_own', 'View own status tracking', 'statuses', 'View only the signed-in student status timeline.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('statuses.transition', 'Transition workflow status', 'statuses', 'Advance or change workflow statuses.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('statuses.enrollment_transition', 'Transition enrollment status', 'statuses', 'Advance or change enrollment statuses.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('id_cards.view', 'View ID generation module', 'id_cards', 'Access ID generation, preview, and verification context.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('id_cards.view_own', 'View own ID card', 'id_cards', 'View only the signed-in student ID card preview and download.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('id_cards.generate', 'Generate student IDs', 'id_cards', 'Create printable student IDs.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('requests.create', 'Create student requests', 'requests', 'Submit self-service student requests.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('requests.view_own', 'View own requests', 'requests', 'View requests owned by the signed-in student.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -56,7 +61,7 @@ WHERE
         'records.view', 'dashboard.view_operations'
     ))
     OR (roles.slug = 'student' AND permissions.code IN (
-        'dashboard.view_student', 'students.view', 'students.update', 'records.view', 'statuses.view', 'id_cards.view',
+        'dashboard.view_student', 'students.view_own', 'students.update_own', 'records.view_own', 'statuses.view_own', 'id_cards.view_own',
         'requests.create', 'requests.view_own'
     ));
 

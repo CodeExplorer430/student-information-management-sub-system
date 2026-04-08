@@ -23,7 +23,7 @@ final class RecordController
 
     public function index(): void
     {
-        if (!$this->auth->can('records.view')) {
+        if (!$this->auth->can('records.view') && !$this->auth->can('records.view_own')) {
             $this->response->redirect('/dashboard', 'You are not authorized to access academic records.', 'error');
         }
 
@@ -32,7 +32,7 @@ final class RecordController
             'department' => trim(string_value($_GET['department'] ?? '')),
         ];
 
-        if ($this->auth->primaryRole() === 'student') {
+        if ($this->usesOwnRecordScope()) {
             $filters['student'] = $this->auth->user()['email'] ?? '';
         }
 
@@ -63,7 +63,7 @@ final class RecordController
 
     public function show(int $id): void
     {
-        if (!$this->auth->can('records.view')) {
+        if (!$this->auth->can('records.view') && !$this->auth->can('records.view_own')) {
             $this->response->redirect('/dashboard', 'You are not authorized to access academic records.', 'error');
         }
 
@@ -72,7 +72,7 @@ final class RecordController
             $this->response->view('partials/404', [], 404);
         }
 
-        if ($this->auth->primaryRole() === 'student' && $student['email'] !== ($this->auth->user()['email'] ?? '')) {
+        if ($this->usesOwnRecordScope() && $student['email'] !== ($this->auth->user()['email'] ?? '')) {
             $this->response->redirect('/records', 'You can only view your own records.', 'error');
         }
 
@@ -84,7 +84,7 @@ final class RecordController
 
     public function export(int $id): void
     {
-        if (!$this->auth->can('records.view')) {
+        if (!$this->auth->can('records.view') && !$this->auth->can('records.view_own')) {
             $this->response->redirect('/dashboard', 'You are not authorized to export academic records.', 'error');
         }
 
@@ -93,7 +93,7 @@ final class RecordController
             $this->response->view('partials/404', [], 404);
         }
 
-        if ($this->auth->primaryRole() === 'student' && $student['email'] !== ($this->auth->user()['email'] ?? '')) {
+        if ($this->usesOwnRecordScope() && $student['email'] !== ($this->auth->user()['email'] ?? '')) {
             $this->response->redirect('/records', 'You can only export your own records.', 'error');
         }
 
@@ -107,11 +107,11 @@ final class RecordController
         fputcsv($stream, ['term_label', 'subject_code', 'subject_title', 'units', 'grade'], ',', '"', '');
         foreach ($rows as $row) {
             fputcsv($stream, [
-                map_string($row, 'term_label'),
-                map_string($row, 'subject_code'),
-                map_string($row, 'subject_title'),
-                string_value($row['units'] ?? ''),
-                map_string($row, 'grade'),
+                $this->csvCell(map_string($row, 'term_label')),
+                $this->csvCell(map_string($row, 'subject_code')),
+                $this->csvCell(map_string($row, 'subject_title')),
+                $this->csvCell(string_value($row['units'] ?? '')),
+                $this->csvCell(map_string($row, 'grade')),
             ], ',', '"', '');
         }
         rewind($stream);
@@ -123,5 +123,15 @@ final class RecordController
             sprintf('academic-records-%s.csv', string_value($student['student_number'] ?? $id)),
             'text/csv; charset=UTF-8'
         );
+    }
+
+    private function usesOwnRecordScope(): bool
+    {
+        return $this->auth->can('records.view_own') && !$this->auth->can('records.view');
+    }
+
+    private function csvCell(string $value): string
+    {
+        return preg_match('/^\s*[=+\-@\t\r\n]/', $value) === 1 ? "'" . $value : $value;
     }
 }

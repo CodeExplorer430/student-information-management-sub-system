@@ -101,7 +101,7 @@ final class ReportController
         foreach ($rows as $row) {
             $line = [];
             foreach ($headers as $header) {
-                $line[] = string_value($row[$header] ?? '');
+                $line[] = $this->csvCell(string_value($row[$header] ?? ''));
             }
             fputcsv($stream, $line, ',', '"', '');
         }
@@ -111,5 +111,10 @@ final class ReportController
         fclose($stream);
 
         return $csv;
+    }
+
+    private function csvCell(string $value): string
+    {
+        return preg_match('/^\s*[=+\-@\t\r\n]/', $value) === 1 ? "'" . $value : $value;
     }
 }

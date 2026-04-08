@@ -16,7 +16,6 @@ use App\Controllers\RequestController;
 use App\Controllers\StudentController;
 use App\Core\HttpResult;
 use App\Core\HttpResultException;
-use App\Repositories\RoleRepository;
 use App\Repositories\StudentRepository;
 use App\Repositories\UserRepository;
 use App\Services\RequestService;
@@ -34,10 +33,6 @@ final class ControllerDirectCoverageIntegrationTest extends HttpIntegrationTestC
         $this->assertRedirect($this->captureResult(fn () => $controller->index()), '/dashboard');
         $this->assertRedirect($this->captureResult(fn () => $controller->show(1)), '/dashboard');
         $this->assertRedirect($this->captureResult(fn () => $controller->export(1)), '/dashboard');
-
-        $studentPermissions = $this->app->get(RoleRepository::class)->permissionsForRole('student');
-        $studentPermissions[] = 'records.view';
-        $this->app->get(RoleRepository::class)->syncPermissions('student', array_values(array_unique($studentPermissions)));
 
         $otherStudent = $this->createStudentUser('coverage.records@bcp.edu', 'BSI-2026-1998');
 
@@ -158,10 +153,6 @@ final class ControllerDirectCoverageIntegrationTest extends HttpIntegrationTestC
             '/dashboard'
         );
 
-        $studentPermissions = $this->app->get(RoleRepository::class)->permissionsForRole('student');
-        $studentPermissions[] = 'id_cards.view';
-        $this->app->get(RoleRepository::class)->syncPermissions('student', array_values(array_unique($studentPermissions)));
-
         $otherStudent = $this->createStudentUser('coverage.idcards@bcp.edu', 'BSI-2026-1996');
         $this->actingAs((string) ($otherStudent['email'] ?? ''));
 
@@ -229,8 +220,9 @@ final class ControllerDirectCoverageIntegrationTest extends HttpIntegrationTestC
         self::assertStringContainsString('BSI-2026-1001', $index->body());
         self::assertStringNotContainsString((string) ($otherStudent['student_number'] ?? ''), $index->body());
 
-        $createRedirect = $this->captureResult(fn () => $controller->create());
-        $this->assertRedirect($createRedirect, '/students');
+        $create = $this->captureResult(fn () => $controller->create());
+        self::assertSame(200, $create->status());
+        self::assertStringContainsString('Create a new student record', $create->body());
 
         $this->actingAs('admin@bcp.edu');
         $_POST = [

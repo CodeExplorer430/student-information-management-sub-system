@@ -4,7 +4,8 @@
 - Prepared statements for all database operations.
 - CSRF tokens on POST requests, with invalid-token rejection redirected safely instead of surfacing raw exceptions.
 - Session regeneration on login plus configurable cookie hardening through `SESSION_SAME_SITE` and `SESSION_SECURE`.
-- Role-based access controls for admin, registrar, staff, faculty, and student accounts, with student ownership checks on self-service routes.
+- Role-based access controls for admin, registrar, staff, faculty, and student accounts, with explicit own-only permissions for self-service routes.
+- CSRF-protected logout, formula-hardened CSV exports, and normalized download filenames.
 - Output escaping through centralized PHP view helpers and escaped templates.
 - MIME-type and file-size validation for profile photo uploads.
 - Security headers in the router for clickjacking, MIME sniffing, CSP, referrer policy, and browser capability reduction.
@@ -23,7 +24,7 @@
 ## Operational guidance
 - Use MySQL/MariaDB credentials from `.env`, never hardcode them.
 - Treat MySQL as the normal runtime database and keep SQLite limited to the automated test path.
-- Limit academic record access to registrar/admin/faculty users, with student access restricted to self-view only.
+- Limit broad academic record access to registrar/admin/faculty users; use own-only permissions such as `records.view_own` for student-scoped roles.
 - Enable `SESSION_SECURE=true` when the app is served over HTTPS.
 - Keep `storage/app/private/uploads` non-public.
 - Rotate default demo credentials before any shared deployment.

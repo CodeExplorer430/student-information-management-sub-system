@@ -38,7 +38,7 @@ final class StudentController
         ];
 
         $students = $this->search->students($filters);
-        if ($this->auth->primaryRole() === 'student') {
+        if ($this->usesOwnStudentScope('students.view', 'students.view_own')) {
             $students = array_values(array_filter($students, fn (array $student): bool => $student['email'] === ($this->auth->user()['email'] ?? '')));
         }
 
@@ -53,10 +53,6 @@ final class StudentController
 
     public function create(): void
     {
-        if ($this->auth->primaryRole() === 'student') {
-            $this->response->redirect('/students', 'Students cannot create new profiles.', 'error');
-        }
-
         $this->response->view('students/create', [
             'statuses' => StatusService::ALLOWED_STATUSES,
         ]);
@@ -92,7 +88,7 @@ final class StudentController
             $this->response->view('partials/404', [], 404);
         }
 
-        $this->authorizeStudentAccess($student);
+        $this->authorizeStudentAccess($student, 'view');
 
         $this->response->view('students/show', [
             'student' => $student,
@@ -106,7 +102,7 @@ final class StudentController
             $this->response->view('partials/404', [], 404);
         }
 
-        $this->authorizeStudentAccess($student);
+        $this->authorizeStudentAccess($student, 'update');
 
         $this->response->view('students/edit', [
             'student' => $student,
@@ -126,7 +122,7 @@ final class StudentController
             $this->response->view('partials/404', [], 404);
         }
 
-        $this->authorizeStudentAccess($student);
+        $this->authorizeStudentAccess($student, 'update');
 
         if ($errors !== []) {
             $this->renderEditForm($student, $errors, 422);
@@ -166,11 +162,23 @@ final class StudentController
     /**
      * @param StudentRow $student
      */
-    private function authorizeStudentAccess(array $student): void
+    private function authorizeStudentAccess(array $student, string $action): void
     {
-        if ($this->auth->primaryRole() === 'student' && $student['email'] !== ($this->auth->user()['email'] ?? '')) {
+        $ownOnly = $action === 'update'
+            ? $this->usesOwnStudentScope('students.update', 'students.update_own')
+            : $this->usesOwnStudentScope('students.view', 'students.view_own');
+
+        if (
+            $ownOnly
+            && $student['email'] !== ($this->auth->user()['email'] ?? '')
+        ) {
             $this->response->redirect('/students', 'You can only access your own profile.', 'error');
         }
+    }
+
+    private function usesOwnStudentScope(string $broadPermission, string $ownPermission): bool
+    {
+        return $this->auth->can($ownPermission) && !$this->auth->can($broadPermission);
     }
 
     /**

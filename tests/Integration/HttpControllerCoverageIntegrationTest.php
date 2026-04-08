@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
+use App\Core\Database;
 use App\Repositories\RequestRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\StudentRepository;
@@ -58,7 +59,7 @@ final class HttpControllerCoverageIntegrationTest extends HttpIntegrationTestCas
                 'body' => 'Attached an update for the student.',
             ], files: [
                 'attachment' => [
-                    'name' => 'note.txt',
+                    'name' => '../evil"' . "\r\n" . '.txt',
                     'tmp_name' => $tmpFile,
                     'error' => UPLOAD_ERR_OK,
                     'size' => filesize($tmpFile),
@@ -82,6 +83,7 @@ final class HttpControllerCoverageIntegrationTest extends HttpIntegrationTestCas
         $download = $this->request('GET', '/requests/attachments/' . $attachmentId . '/download');
         self::assertSame(200, $download->status());
         self::assertSame('text/plain', $download->headers()['Content-Type'] ?? null);
+        self::assertSame('attachment; filename="evil_.txt"', $download->headers()['Content-Disposition'] ?? null);
         self::assertStringContainsString('hello attachment', $download->body());
 
         $storagePath = dirname(__DIR__, 2) . '/storage/app/private/uploads/' . ($request['attachments'][0]['stored_name'] ?? '');
@@ -161,6 +163,91 @@ final class HttpControllerCoverageIntegrationTest extends HttpIntegrationTestCas
 
         $this->assertRedirect($sync, '/admin/roles');
         self::assertContains('records.view', $this->app->get(RoleRepository::class)->permissionsForRole('faculty'));
+
+        $invalidCreate = $this->request('POST', '/admin/roles', post: [
+            '_csrf' => $this->csrfToken(),
+            '_back' => '/admin/roles',
+            'name' => 'Invalid Role',
+            'slug' => 'Invalid Role',
+        ]);
+        $this->assertRedirect($invalidCreate, '/admin/roles');
+
+        $missingSlugCreate = $this->request('POST', '/admin/roles', post: [
+            '_csrf' => $this->csrfToken(),
+            '_back' => '/admin/roles',
+            'name' => 'Missing Slug Role',
+            'slug' => '',
+        ]);
+        $this->assertRedirect($missingSlugCreate, '/admin/roles');
+
+        $createRole = $this->request('POST', '/admin/roles', post: [
+            '_csrf' => $this->csrfToken(),
+            '_back' => '/admin/roles',
+            'name' => 'Support Operations',
+            'slug' => 'support_ops',
+            'description' => 'Handles escalated support queues.',
+        ]);
+        $this->assertRedirect($createRole, '/admin/roles');
+        self::assertNotNull($this->app->get(RoleRepository::class)->findBySlug('support_ops'));
+
+        $duplicateRole = $this->request('POST', '/admin/roles', post: [
+            '_csrf' => $this->csrfToken(),
+            '_back' => '/admin/roles',
+            'name' => 'Support Operations',
+            'slug' => 'support_ops',
+        ]);
+        $this->assertRedirect($duplicateRole, '/admin/roles');
+
+        $longSlugRole = $this->request('POST', '/admin/roles', post: [
+            '_csrf' => $this->csrfToken(),
+            '_back' => '/admin/roles',
+            'name' => 'Long Slug Role',
+            'slug' => str_repeat('a', 51),
+        ]);
+        $this->assertRedirect($longSlugRole, '/admin/roles');
+        self::assertFalse($this->app->get(RoleRepository::class)->slugExists(str_repeat('a', 51)));
+
+        $updateRole = $this->request('POST', '/admin/roles/support_ops/update', post: [
+            '_csrf' => $this->csrfToken(),
+            '_back' => '/admin/roles',
+            'name' => 'Support Services',
+            'slug' => 'support_services',
+            'description' => 'Handles student services queues.',
+        ]);
+        $this->assertRedirect($updateRole, '/admin/roles');
+        self::assertNotNull($this->app->get(RoleRepository::class)->findBySlug('support_ops'));
+        self::assertNull($this->app->get(RoleRepository::class)->findBySlug('support_services'));
+
+        $invalidRoleUpdate = $this->request('POST', '/admin/roles/support_ops/update', post: [
+            '_csrf' => $this->csrfToken(),
+            '_back' => '/admin/roles',
+            'name' => '',
+            'slug' => '',
+        ]);
+        $this->assertRedirect($invalidRoleUpdate, '/admin/roles');
+
+        $duplicateRoleUpdate = $this->request('POST', '/admin/roles/support_ops/update', post: [
+            '_csrf' => $this->csrfToken(),
+            '_back' => '/admin/roles',
+            'name' => 'Support Services',
+            'slug' => 'admin',
+        ]);
+        $this->assertRedirect($duplicateRoleUpdate, '/admin/roles');
+
+        $missingRoleUpdate = $this->request('POST', '/admin/roles/missing-role/update', post: [
+            '_csrf' => $this->csrfToken(),
+            '_back' => '/admin/roles',
+            'name' => 'Missing Role',
+            'slug' => 'missing_role',
+        ]);
+        $this->assertRedirect($missingRoleUpdate, '/admin/roles');
+
+        $slashRoleUpdate = $this->request('POST', '/admin/roles/support/ops/update', post: [
+            '_csrf' => $this->csrfToken(),
+            '_back' => '/admin/roles',
+            'name' => 'Support Ops',
+        ]);
+        $this->assertHtml($slashRoleUpdate, 404);
     }
 
     public function testRequestControllerCoversDeniedNotFoundAndVisibilityBranches(): void
@@ -446,13 +533,13 @@ final class HttpControllerCoverageIntegrationTest extends HttpIntegrationTestCas
 
         $this->app->get(RoleRepository::class)->syncPermissions('student', [
             'dashboard.view_student',
-            'students.view',
-            'students.update',
+            'students.view_own',
+            'students.update_own',
             'requests.create',
             'requests.view_own',
-            'statuses.view',
+            'statuses.view_own',
             'notifications.view',
-            'id_cards.view',
+            'id_cards.view_own',
         ]);
         $this->app->get(UserRepository::class)->create([
             'name' => 'Card Coverage Student',
@@ -522,9 +609,14 @@ final class HttpControllerCoverageIntegrationTest extends HttpIntegrationTestCas
         $this->assertHtml($invalidDataset);
         self::assertStringContainsString('Operational reporting and exports', $invalidDataset->body());
 
+        $connection = $this->app->get(Database::class)->connection();
+        $statement = $connection->prepare('UPDATE students SET first_name = :first_name WHERE id = 1');
+        $statement->execute(['first_name' => '=cmd']);
+
         $studentsExport = $this->request('GET', '/reports/export/students');
         self::assertSame('text/csv; charset=UTF-8', $studentsExport->headers()['Content-Type'] ?? null);
         self::assertStringContainsString('student_number,first_name,last_name,program,department,latest_status,enrollment_status', $studentsExport->body());
+        self::assertStringContainsString("'=cmd", $studentsExport->body());
 
         $auditsExport = $this->request('GET', '/reports/export/audits');
         self::assertSame('text/csv; charset=UTF-8', $auditsExport->headers()['Content-Type'] ?? null);
@@ -537,17 +629,24 @@ final class HttpControllerCoverageIntegrationTest extends HttpIntegrationTestCas
         $invalidRole = $this->request('POST', '/admin/users/1/role', post: [
             '_csrf' => $this->csrfToken(),
             '_back' => '/admin/users',
-            'roles' => ['admin', 'made-up-role'],
+            'role' => 'made-up-role',
         ]);
         $this->assertRedirect($invalidRole, '/admin/users');
+
+        $missingUserRole = $this->request('POST', '/admin/users/9999/role', post: [
+            '_csrf' => $this->csrfToken(),
+            '_back' => '/admin/users',
+            'role' => 'student',
+        ]);
+        $this->assertHtml($missingUserRole, 404);
 
         $validRoleUpdate = $this->request('POST', '/admin/users/1/role', post: [
             '_csrf' => $this->csrfToken(),
             '_back' => '/admin/users',
-            'roles' => ['staff', 'admin'],
+            'role' => 'staff',
         ]);
         $this->assertRedirect($validRoleUpdate, '/admin/users');
-        self::assertSame(['admin', 'staff'], $this->app->get(UserRepository::class)->find(1)['roles'] ?? null);
+        self::assertSame(['staff'], $this->app->get(UserRepository::class)->find(1)['roles'] ?? null);
 
         $validTransition = $this->request('POST', '/statuses/1/transition', post: [
             '_csrf' => $this->csrfToken(),
@@ -569,10 +668,6 @@ final class HttpControllerCoverageIntegrationTest extends HttpIntegrationTestCas
 
         $missingStatus = $this->request('GET', '/statuses/9999');
         $this->assertHtml($missingStatus, 404);
-
-        $studentPermissions = $this->app->get(RoleRepository::class)->permissionsForRole('student');
-        $studentPermissions[] = 'records.view';
-        $this->app->get(RoleRepository::class)->syncPermissions('student', array_values(array_unique($studentPermissions)));
 
         $otherStudentUserId = $this->app->get(UserRepository::class)->create([
             'name' => 'Coverage Student',
@@ -637,5 +732,77 @@ final class HttpControllerCoverageIntegrationTest extends HttpIntegrationTestCas
 
         $missingRecordExport = $this->request('GET', '/records/9999/export');
         $this->assertHtml($missingRecordExport, 404);
+    }
+
+    public function testCustomOwnScopedRoleCannotAccessOtherStudentData(): void
+    {
+        $roles = $this->app->get(RoleRepository::class);
+        $roles->createRole('self_service', 'Self Service', 'Student-scoped custom role.');
+        $roles->syncPermissions('self_service', [
+            'dashboard.view_student',
+            'students.view_own',
+            'students.update_own',
+            'records.view_own',
+            'statuses.view_own',
+            'id_cards.view_own',
+            'requests.create',
+            'requests.view_own',
+        ]);
+
+        $this->app->get(UserRepository::class)->create([
+            'name' => 'Custom Scope Student',
+            'email' => 'custom.scope@bcp.edu',
+            'password_hash' => password_hash('Password123!', PASSWORD_DEFAULT),
+            'roles' => ['self_service'],
+            'department' => 'BSIT',
+            'created_at' => '2026-03-31 10:00:00',
+            'updated_at' => '2026-03-31 10:00:00',
+        ]);
+
+        $studentId = $this->app->get(StudentRepository::class)->create([
+            'student_number' => 'BSI-2026-1995',
+            'first_name' => 'Custom',
+            'middle_name' => '',
+            'last_name' => 'Scope',
+            'birthdate' => '2005-02-12',
+            'program' => 'BSIT',
+            'year_level' => '2',
+            'email' => 'custom.scope@bcp.edu',
+            'phone' => '09171234567',
+            'address' => 'Malolos',
+            'guardian_name' => 'Custom Guardian',
+            'guardian_contact' => '09170000012',
+            'department' => 'BSIT',
+            'enrollment_status' => 'Active',
+            'photo_path' => '',
+            'created_at' => '2026-03-31 10:00:00',
+            'updated_at' => '2026-03-31 10:00:00',
+        ]);
+
+        $this->actingAs('custom.scope@bcp.edu');
+
+        $dashboard = $this->request('GET', '/dashboard');
+        $this->assertHtml($dashboard);
+        self::assertStringContainsString('Self-service student dashboard', $dashboard->body());
+
+        foreach ([
+            '/students' => 'BSI-2026-1995',
+            '/records' => 'Academic records viewer',
+            '/statuses' => 'BSI-2026-1995',
+            '/id-cards' => 'BSI-2026-1995',
+        ] as $path => $needle) {
+            $response = $this->request('GET', $path);
+            $this->assertHtml($response);
+            self::assertStringContainsString($needle, $response->body());
+            self::assertStringNotContainsString('BSI-2026-1001', $response->body());
+        }
+
+        $this->assertRedirect($this->request('GET', '/students/1'), '/students');
+        $this->assertRedirect($this->request('GET', '/records/1'), '/records');
+        $this->assertRedirect($this->request('GET', '/statuses/1'), '/statuses');
+        $this->assertRedirect($this->request('GET', '/id-cards/1/download'), '/id-cards');
+
+        $ownProfile = $this->request('GET', '/students/' . $studentId);
+        $this->assertHtml($ownProfile);
     }
 }

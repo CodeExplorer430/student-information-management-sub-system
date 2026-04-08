@@ -34,7 +34,7 @@ final class StatusController
         ];
 
         $requests = $this->students->search($filters);
-        if ($this->auth->primaryRole() === 'student') {
+        if ($this->usesOwnStatusScope()) {
             $requests = array_values(array_filter($requests, fn (array $student): bool => $student['email'] === ($this->auth->user()['email'] ?? '')));
         }
 
@@ -54,7 +54,7 @@ final class StatusController
             $this->response->view('partials/404', [], 404);
         }
 
-        if ($this->auth->primaryRole() === 'student' && $student['email'] !== ($this->auth->user()['email'] ?? '')) {
+        if ($this->usesOwnStatusScope() && $student['email'] !== ($this->auth->user()['email'] ?? '')) {
             $this->response->redirect('/statuses', 'You can only view your own status timeline.', 'error');
         }
 
@@ -91,5 +91,10 @@ final class StatusController
         }
 
         $this->response->redirect('/statuses/' . $id, 'Enrollment status updated successfully.');
+    }
+
+    private function usesOwnStatusScope(): bool
+    {
+        return $this->auth->can('statuses.view_own') && !$this->auth->can('statuses.view');
     }
 }

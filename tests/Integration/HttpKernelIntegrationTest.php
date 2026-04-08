@@ -61,6 +61,14 @@ final class HttpKernelIntegrationTest extends HttpIntegrationTestCase
         $this->assertRedirect($successfulLogin, '/dashboard');
         self::assertIsInt($_SESSION['auth.user_id'] ?? null);
 
+        $invalidLogout = $this->request('POST', '/logout', post: [
+            '_csrf' => 'invalid-token',
+            '_back' => '/dashboard',
+        ]);
+
+        $this->assertRedirect($invalidLogout, '/dashboard');
+        self::assertIsInt($_SESSION['auth.user_id'] ?? null);
+
         $logout = $this->request('POST', '/logout', post: [
             '_csrf' => $this->csrfToken(),
             '_back' => '/dashboard',
@@ -157,7 +165,7 @@ final class HttpKernelIntegrationTest extends HttpIntegrationTestCase
         $invalidUserRole = $this->request('POST', '/admin/users/' . $admin['id'] . '/role', post: [
             '_csrf' => $this->csrfToken(),
             '_back' => '/admin/users',
-            'roles' => [],
+            'role' => '',
         ]);
 
         $this->assertRedirect($invalidUserRole, '/admin/users');
@@ -184,9 +192,22 @@ final class HttpKernelIntegrationTest extends HttpIntegrationTestCase
         self::assertSame('attachment; filename="student-id-' . $student['id'] . '.png"', $download->headers()['Content-Disposition'] ?? null);
         self::assertNotSame('', $download->body());
 
+        $statement = $this->app->get(Database::class)->connection()->prepare(
+            'UPDATE academic_records
+             SET subject_title = :subject_title
+             WHERE id = (
+                 SELECT id FROM academic_records WHERE student_id = :student_id ORDER BY id ASC LIMIT 1
+             )'
+        );
+        $statement->execute([
+            'subject_title' => '=SUM(1,1)',
+            'student_id' => $student['id'],
+        ]);
+
         $recordsExport = $this->request('GET', '/records/' . $student['id'] . '/export');
         self::assertSame('text/csv; charset=UTF-8', $recordsExport->headers()['Content-Type'] ?? null);
         self::assertStringContainsString('term_label,subject_code,subject_title,units,grade', $recordsExport->body());
+        self::assertStringContainsString("'=SUM(1,1)", $recordsExport->body());
 
         $reportExport = $this->request('GET', '/reports/export/requests', query: ['search' => 'Profile']);
         self::assertSame('text/csv; charset=UTF-8', $reportExport->headers()['Content-Type'] ?? null);

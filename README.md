@@ -16,7 +16,7 @@ The application models two separate student status concepts:
 - Academic records viewing with role and ownership boundaries
 - Request center with queue management, notes, attachments, due dates, and
   notifications
-- Configurable RBAC with multi-role aggregation and admin role management
+- Configurable RBAC with backend role aggregation and single-role admin assignment
 - Student ID generation with preview, download, print, barcode, and QR
   verification
 - Reporting, CSV export, diagnostics, health checks, backups, and operational
@@ -74,6 +74,11 @@ Direct import snapshots are also available for empty databases:
 The import snapshots embed the demo password hash for `Password123!`. The
 Composer seed path hashes the configured `DEFAULT_PASSWORD` from `.env`; direct
 SQL imports do not.
+
+RBAC separates broad permissions such as `records.view` from own-only
+permissions such as `records.view_own`. The admin UI assigns one active role per
+user, while the `user_roles` table still supports aggregated roles for
+compatibility and seeded admin coverage.
 
 ## Demo Credentials
 - `admin@bcp.edu`

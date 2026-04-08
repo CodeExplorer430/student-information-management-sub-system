@@ -56,6 +56,75 @@ final class RoleRepository
     }
 
     /**
+     * @return RoleRow|null
+     */
+    public function findBySlug(string $slug): ?array
+    {
+        $statement = $this->database->connection()->prepare('SELECT * FROM roles WHERE slug = :slug LIMIT 1');
+        $statement->execute(['slug' => $slug]);
+        $role = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if (!is_array($role)) {
+            return null;
+        }
+
+        /** @var RoleRow $role */
+        return $role;
+    }
+
+    public function slugExists(string $slug, ?string $exceptSlug = null): bool
+    {
+        $sql = 'SELECT COUNT(*) FROM roles WHERE slug = :slug';
+        $params = ['slug' => $slug];
+
+        if ($exceptSlug !== null) {
+            $sql .= ' AND slug != :except_slug';
+            $params['except_slug'] = $exceptSlug;
+        }
+
+        $statement = $this->database->connection()->prepare($sql);
+        $statement->execute($params);
+
+        return (int) $statement->fetchColumn() > 0;
+    }
+
+    public function createRole(string $slug, string $name, ?string $description): void
+    {
+        $statement = $this->database->connection()->prepare(
+            'INSERT INTO roles (slug, name, description, created_at, updated_at)
+             VALUES (:slug, :name, :description, :created_at, :updated_at)'
+        );
+        $now = date('Y-m-d H:i:s');
+
+        $statement->execute([
+            'slug' => $slug,
+            'name' => $name,
+            'description' => $description,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+    }
+
+    public function updateRole(string $slug, string $name, ?string $description): bool
+    {
+        $statement = $this->database->connection()->prepare(
+            'UPDATE roles
+             SET name = :name,
+                 description = :description,
+                 updated_at = :updated_at
+             WHERE slug = :slug'
+        );
+        $statement->execute([
+            'name' => $name,
+            'description' => $description,
+            'updated_at' => date('Y-m-d H:i:s'),
+            'slug' => $slug,
+        ]);
+
+        return $statement->rowCount() > 0;
+    }
+
+    /**
      * @return list<string>
      */
     public function permissionsForRole(string $roleSlug): array

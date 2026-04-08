@@ -18,73 +18,80 @@ namespace App\Services {
         return \scandir($directory, $sortingOrder);
     }
 
-    function file_put_contents(string $filename, mixed $data, int $flags = 0): int|false
-    {
-        $targets = $GLOBALS['__sims_backup_file_put_contents_false'] ?? [];
-        $suffixes = $GLOBALS['__sims_backup_file_put_contents_false_suffixes'] ?? [];
+    if (!function_exists(__NAMESPACE__ . '\\file_put_contents')) {
+        function file_put_contents(string $filename, mixed $data, int $flags = 0, mixed $context = null): int|false
+        {
+            $targets = $GLOBALS['__sims_backup_file_put_contents_false'] ?? [];
+            $suffixes = $GLOBALS['__sims_backup_file_put_contents_false_suffixes'] ?? [];
 
-        if (is_array($targets) && in_array($filename, $targets, true)) {
-            return false;
-        }
-
-        if (is_array($suffixes)) {
-            foreach ($suffixes as $suffix) {
-                if (is_string($suffix) && str_ends_with($filename, $suffix)) {
-                    return false;
-                }
-            }
-        }
-
-        if (is_bool($targets) && $targets) {
-            return false;
-        }
-
-        return \file_put_contents($filename, $data, $flags);
-    }
-
-    function file_get_contents(string $filename, bool $useIncludePath = false, mixed $context = null, int $offset = 0, ?int $length = null): string|false
-    {
-        $targets = $GLOBALS['__sims_backup_file_get_contents_false'] ?? [];
-        $suffixes = $GLOBALS['__sims_backup_file_get_contents_false_suffixes'] ?? [];
-        $nthTargets = $GLOBALS['__sims_backup_file_get_contents_false_on_nth'] ?? [];
-
-        if (is_array($targets) && in_array($filename, $targets, true)) {
-            return false;
-        }
-
-        if (is_array($suffixes)) {
-            foreach ($suffixes as $suffix) {
-                if (is_string($suffix) && str_ends_with($filename, $suffix)) {
-                    return false;
-                }
-            }
-        }
-
-        if (is_array($nthTargets) && isset($nthTargets[$filename]) && is_int($nthTargets[$filename])) {
-            $counts = $GLOBALS['__sims_backup_file_get_contents_counts'] ?? [];
-
-            if (!is_array($counts)) {
-                $counts = [];
-            }
-
-            $existingCount = $counts[$filename] ?? 0;
-            $count = is_int($existingCount) ? $existingCount + 1 : 1;
-            $counts[$filename] = $count;
-            $GLOBALS['__sims_backup_file_get_contents_counts'] = $counts;
-
-            if ($count === $nthTargets[$filename]) {
+            if (is_array($targets) && in_array($filename, $targets, true)) {
                 return false;
             }
+
+            if (is_array($suffixes)) {
+                foreach ($suffixes as $suffix) {
+                    if (is_string($suffix) && str_ends_with($filename, $suffix)) {
+                        return false;
+                    }
+                }
+            }
+
+            if (is_bool($targets) && $targets) {
+                return false;
+            }
+
+            $streamContext = is_resource($context) ? $context : null;
+
+            return \file_put_contents($filename, $data, $flags, $streamContext);
         }
+    }
 
-        /** @var resource|null $streamContext */
-        $streamContext = is_resource($context) ? $context : null;
+    if (!function_exists(__NAMESPACE__ . '\\file_get_contents')) {
+        function file_get_contents(string $filename, bool $useIncludePath = false, mixed $context = null, int $offset = 0, ?int $length = null): string|false
+        {
+            $targets = $GLOBALS['__sims_backup_file_get_contents_false'] ?? [];
+            $suffixes = $GLOBALS['__sims_backup_file_get_contents_false_suffixes'] ?? [];
+            $nthTargets = $GLOBALS['__sims_backup_file_get_contents_false_on_nth'] ?? [];
 
-        if ($length !== null && $length >= 0) {
-            return \file_get_contents($filename, $useIncludePath, $streamContext, $offset, $length);
+            if (is_array($targets) && in_array($filename, $targets, true)) {
+                return false;
+            }
+
+            if (is_array($suffixes)) {
+                foreach ($suffixes as $suffix) {
+                    if (is_string($suffix) && str_ends_with($filename, $suffix)) {
+                        return false;
+                    }
+                }
+            }
+
+            if (is_array($nthTargets) && isset($nthTargets[$filename]) && is_int($nthTargets[$filename])) {
+                $counts = $GLOBALS['__sims_backup_file_get_contents_counts'] ?? [];
+
+                if (!is_array($counts)) {
+                    $counts = [];
+                }
+
+                $existingCount = $counts[$filename] ?? 0;
+                $count = is_int($existingCount) ? $existingCount + 1 : 1;
+                $counts[$filename] = $count;
+                $GLOBALS['__sims_backup_file_get_contents_counts'] = $counts;
+
+                if ($count === $nthTargets[$filename]) {
+                    return false;
+                }
+            }
+
+            $streamContext = is_resource($context) ? $context : null;
+
+            if ($length !== null) {
+                $length = max(0, $length);
+
+                return \file_get_contents($filename, $useIncludePath, $streamContext, $offset, $length);
+            }
+
+            return \file_get_contents($filename, $useIncludePath, $streamContext, $offset);
         }
-
-        return \file_get_contents($filename, $useIncludePath, $streamContext, $offset);
     }
 
     function copy(string $from, string $to): bool
@@ -158,15 +165,17 @@ namespace App\Services {
         return \is_file($filename);
     }
 
-    function filesize(string $filename): int|false
-    {
-        $targets = $GLOBALS['__sims_backup_filesize_false'] ?? [];
+    if (!function_exists(__NAMESPACE__ . '\\filesize')) {
+        function filesize(string $filename): int|false
+        {
+            $targets = $GLOBALS['__sims_backup_filesize_false'] ?? [];
 
-        if (is_array($targets) && in_array($filename, $targets, true)) {
-            return false;
+            if (is_array($targets) && in_array($filename, $targets, true)) {
+                return false;
+            }
+
+            return \filesize($filename);
         }
-
-        return \filesize($filename);
     }
 
     function openssl_encrypt(

@@ -15,7 +15,7 @@ The application follows a clean MVC structure:
 - SQLite is retained for unit/integration tests and the isolated acceptance-test runner to keep automated checks off the live MySQL dataset.
 - Schema creation and seeding are driven by `bin/console`, which emits driver-specific DDL for MySQL and the test-only SQLite path.
 - Direct import snapshots live under `database/import` for empty-database setup; canonical schema/data changes still belong in `database/migrations` and `database/seeds`.
-- RBAC is now backed by `roles`, `permissions`, `role_permissions`, and `user_roles`, while `users.role` is kept as the derived primary display role for UI/dashboard decisions.
+- RBAC is backed by `roles`, `permissions`, `role_permissions`, and `user_roles`; the admin UI assigns one active role, role slugs are immutable after creation, and `users.role` is kept as the derived primary display role.
 - `php bin/console db:summary` exposes the active driver/database and the current seeded student set for quick runtime verification.
 - `php bin/console env:check` reports DB connectivity, required PHP extensions, writable storage paths, and local frontend asset presence.
 - `php bin/console backup:create`, `backup:list`, `backup:verify`, `backup:export`, `backup:push`, `backup:remote:list`, `backup:pull`, `backup:import`, `backup:drill`, `backup:prune`, and `backup:restore` provide the repo-owned local backup, encrypted export, S3-compatible remote replication, drill validation, retention, and recovery path for deployments.
@@ -37,7 +37,7 @@ The application follows a clean MVC structure:
 
 ## Security boundaries
 - Sessions are HTTP-only with CSRF protection on state-changing requests.
-- Permission checks are enforced through route middleware and controller-side access guards, with effective permissions aggregated across assigned roles.
+- Permission checks are enforced through route middleware and controller-side access guards, with broad permissions separated from own-only permissions such as `records.view_own`.
 - Uploaded files are stored outside the public web root.
 - Database access uses prepared statements via PDO only.
 - Audit events track profile changes and workflow transitions.

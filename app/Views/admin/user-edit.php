@@ -51,12 +51,12 @@ $view->layout('layouts/base', [
             <form method="post" action="/admin/users/<?= e($userAccount['id']) ?>/role" class="d-grid gap-3">
                 <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
                 <input type="hidden" name="_back" value="/admin/users/<?= e($userAccount['id']) ?>/edit">
-                <select name="roles[]" class="form-select" multiple size="<?= e(max(3, min(5, count($roles)))) ?>">
+                <select name="role" class="form-select">
                     <?php foreach ($roles as $role): ?>
-                        <option value="<?= e($role['slug']) ?>" <?= in_array($role['slug'], $userAccount['roles'] ?? [], true) ? 'selected' : '' ?>><?= e($role['name']) ?></option>
+                        <option value="<?= e($role['slug']) ?>" <?= selected($userAccount['role'] ?? '', $role['slug']) ?>><?= e($role['name']) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <div class="small text-muted">Primary display role: <?= e($userAccount['role'] ?? '') ?></div>
+                <div class="small text-muted">Options are loaded from roles that admins manage in the role matrix.</div>
                 <button class="btn btn-outline-primary">
                     <i class="fas fa-shield-halved"></i>
                     <span>Save role assignment</span>

@@ -17,6 +17,8 @@ final class RoleRepositoryIntegrationTest extends IntegrationTestCase
         $studentPermissions = $repository->permissionsForRole('student');
         self::assertContains('requests.create', $studentPermissions);
         self::assertContains('dashboard.view_student', $studentPermissions);
+        self::assertContains('students.view_own', $studentPermissions);
+        self::assertNotContains('students.view', $studentPermissions);
 
         $repository->syncPermissions('faculty', ['records.view', 'dashboard.view_operations', 'requests.view_queue']);
 
@@ -36,6 +38,18 @@ final class RoleRepositoryIntegrationTest extends IntegrationTestCase
         self::assertNotEmpty($repository->allPermissions());
         self::assertArrayHasKey('roles', $repository->permissionMatrix());
         self::assertSame([], $repository->permissionsForRoles(['', ' ', '']));
+
+        $repository->createRole('support_ops', 'Support Operations', 'Handles escalated support queues.');
+        self::assertTrue($repository->slugExists('support_ops'));
+        self::assertNotNull($repository->findBySlug('support_ops'));
+
+        $repository->updateRole('support_ops', 'Support Services', 'Handles student services queues.');
+        $updatedRole = $repository->findBySlug('support_ops');
+        self::assertNotNull($updatedRole);
+        self::assertSame('Support Services', $updatedRole['name']);
+        self::assertFalse($repository->slugExists('support_ops', 'support_ops'));
+        self::assertTrue($repository->slugExists('support_ops', 'student'));
+        self::assertFalse($repository->updateRole('missing-role', 'Missing Role', null));
 
         $repository->syncPermissions('missing-role', ['students.view']);
         self::assertContains('records.view', $repository->permissionsForRole('faculty'));
