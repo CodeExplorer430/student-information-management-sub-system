@@ -127,9 +127,17 @@ final class Router
             }
 
             if (str_starts_with($entry, 'permission:')) {
-                $permission = substr($entry, 11);
+                $permissions = array_values(array_filter(array_map('trim', explode(',', substr($entry, 11)))));
+                $authorized = false;
 
-                if (!$auth->can($permission)) {
+                foreach ($permissions as $permission) {
+                    if ($auth->can($permission)) {
+                        $authorized = true;
+                        break;
+                    }
+                }
+
+                if (!$authorized) {
                     $this->app->get(Response::class)->redirect('/dashboard', 'You are not authorized to access this resource.', 'error');
                 }
             }

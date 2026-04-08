@@ -1,7 +1,7 @@
 # Requirements Coverage
 
 ## Summary
-The current codebase covers the major functional modules in `Need-Finals.txt` and `project-requirements.txt`, and now also includes multi-role RBAC administration, student self-service requests, richer registrar/staff queue handling, notification delivery logging, reporting/export views, local vendor assets, database import snapshots, and an environment verification command. The one standing requirement deviation is still the approved renderer change from Twig to native PHP views. The functional and negative-path coverage is now stronger around ID issuance state, upload failure handling, security headers, session cookie policy, generated-file fallback behavior, request notes/attachments, and the reporting/notification surfaces.
+The current codebase covers the major functional modules in `Need-Finals.txt` and `project-requirements.txt`, and now also includes RBAC administration with own-only permission boundaries, student self-service requests, richer registrar/staff queue handling, notification delivery logging, reporting/export views, local vendor assets, database import snapshots, and an environment verification command. The one standing requirement deviation is still the approved renderer change from Twig to native PHP views. The functional and negative-path coverage is now stronger around ID issuance state, upload failure handling, security headers, session cookie policy, generated-file fallback behavior, request notes/attachments, and the reporting/notification surfaces.
 
 ## project-requirements.txt
 | Requirement | Status | Notes |
@@ -56,7 +56,7 @@ Latest local validation after the shared UI polish and database import documenta
 - ID generation, generated-state listing, preview, download, missing-file handling, and verification
 - request-center submission, queue review, role-matrix access, admin user management, and reporting-screen access
 - request note creation, notification persistence, and notification-report exports
-- multi-role permission aggregation and derived primary-role behavior
+- backend role aggregation, single-role admin assignment, immutable role slugs, and own-only permission behavior
 - direct assertions on response security headers
 - session cookie naming and SameSite / HttpOnly / secure-policy configuration
 - validator behavior and repository search baseline

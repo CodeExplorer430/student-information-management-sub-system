@@ -22,33 +22,33 @@ $router->get('/health/ready', [HealthController::class, 'ready']);
 
 $router->get('/login', [AuthController::class, 'showLogin']);
 $router->post('/login', [AuthController::class, 'login']);
-$router->post('/logout', [AuthController::class, 'logout'], ['auth']);
+$router->post('/logout', [AuthController::class, 'logout'], ['auth', 'csrf']);
 
 $router->get('/', [DashboardController::class, 'index'], ['auth']);
 $router->get('/dashboard', [DashboardController::class, 'index'], ['auth']);
 $router->get('/account', [AccountController::class, 'show'], ['auth']);
 $router->post('/account', [AccountController::class, 'update'], ['auth', 'csrf']);
 
-$router->get('/students', [StudentController::class, 'index'], ['auth', 'permission:students.view']);
+$router->get('/students', [StudentController::class, 'index'], ['auth', 'permission:students.view,students.view_own']);
 $router->get('/students/create', [StudentController::class, 'create'], ['auth', 'permission:students.create']);
 $router->post('/students', [StudentController::class, 'store'], ['auth', 'permission:students.create', 'csrf']);
-$router->get('/students/[i:id]', [StudentController::class, 'show'], ['auth', 'permission:students.view']);
-$router->get('/students/[i:id]/edit', [StudentController::class, 'edit'], ['auth', 'permission:students.update']);
-$router->post('/students/[i:id]/update', [StudentController::class, 'update'], ['auth', 'permission:students.update', 'csrf']);
+$router->get('/students/[i:id]', [StudentController::class, 'show'], ['auth', 'permission:students.view,students.view_own']);
+$router->get('/students/[i:id]/edit', [StudentController::class, 'edit'], ['auth', 'permission:students.update,students.update_own']);
+$router->post('/students/[i:id]/update', [StudentController::class, 'update'], ['auth', 'permission:students.update,students.update_own', 'csrf']);
 
-$router->get('/records', [RecordController::class, 'index'], ['auth', 'permission:records.view']);
-$router->get('/records/[i:id]', [RecordController::class, 'show'], ['auth', 'permission:records.view']);
-$router->get('/records/[i:id]/export', [RecordController::class, 'export'], ['auth', 'permission:records.view']);
+$router->get('/records', [RecordController::class, 'index'], ['auth', 'permission:records.view,records.view_own']);
+$router->get('/records/[i:id]', [RecordController::class, 'show'], ['auth', 'permission:records.view,records.view_own']);
+$router->get('/records/[i:id]/export', [RecordController::class, 'export'], ['auth', 'permission:records.view,records.view_own']);
 
-$router->get('/statuses', [StatusController::class, 'index'], ['auth', 'permission:statuses.view']);
-$router->get('/statuses/[i:id]', [StatusController::class, 'show'], ['auth', 'permission:statuses.view']);
+$router->get('/statuses', [StatusController::class, 'index'], ['auth', 'permission:statuses.view,statuses.view_own']);
+$router->get('/statuses/[i:id]', [StatusController::class, 'show'], ['auth', 'permission:statuses.view,statuses.view_own']);
 $router->post('/statuses/[i:id]/transition', [StatusController::class, 'transition'], ['auth', 'permission:statuses.transition', 'csrf']);
 $router->post('/statuses/[i:id]/enrollment-transition', [StatusController::class, 'transitionEnrollment'], ['auth', 'permission:statuses.enrollment_transition', 'csrf']);
 
-$router->get('/id-cards', [IdCardController::class, 'index'], ['auth', 'permission:id_cards.view']);
+$router->get('/id-cards', [IdCardController::class, 'index'], ['auth', 'permission:id_cards.view,id_cards.view_own']);
 $router->post('/id-cards/generate', [IdCardController::class, 'generate'], ['auth', 'permission:id_cards.generate', 'csrf']);
-$router->get('/id-cards/[i:id]/download', [IdCardController::class, 'download'], ['auth', 'permission:id_cards.view']);
-$router->get('/id-cards/[i:id]/print', [IdCardController::class, 'printView'], ['auth', 'permission:id_cards.view']);
+$router->get('/id-cards/[i:id]/download', [IdCardController::class, 'download'], ['auth', 'permission:id_cards.view,id_cards.view_own']);
+$router->get('/id-cards/[i:id]/print', [IdCardController::class, 'printView'], ['auth', 'permission:id_cards.view,id_cards.view_own']);
 $router->get('/id-cards/[i:id]/verify', [IdCardController::class, 'verify']);
 
 $router->get('/requests', [RequestController::class, 'index'], ['auth']);
@@ -68,7 +68,9 @@ $router->post('/admin/users/[i:id]/update', [AdminController::class, 'updateUser
 $router->post('/admin/users/[i:id]/password', [AdminController::class, 'resetUserPassword'], ['auth', 'permission:admin.users', 'csrf']);
 $router->post('/admin/users/[i:id]/role', [AdminController::class, 'updateUserRole'], ['auth', 'permission:admin.users', 'csrf']);
 $router->get('/admin/roles', [AdminController::class, 'roles'], ['auth', 'permission:admin.roles']);
-$router->post('/admin/roles/[a:slug]/permissions', [AdminController::class, 'syncRolePermissions'], ['auth', 'permission:admin.roles', 'csrf']);
+$router->post('/admin/roles', [AdminController::class, 'createRole'], ['auth', 'permission:admin.roles', 'csrf']);
+$router->post('/admin/roles/[:slug]/update', [AdminController::class, 'updateRole'], ['auth', 'permission:admin.roles', 'csrf']);
+$router->post('/admin/roles/[:slug]/permissions', [AdminController::class, 'syncRolePermissions'], ['auth', 'permission:admin.roles', 'csrf']);
 $router->get('/admin/diagnostics', [AdminController::class, 'diagnostics'], ['auth', 'permission:admin.roles']);
 
 $router->get('/reports', [ReportController::class, 'index'], ['auth', 'permission:reports.view']);

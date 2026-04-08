@@ -87,6 +87,9 @@ final class FrameworkCoverageIntegrationTest extends IntegrationTestCase
             self::assertSame('attachment; filename="example.txt"', $downloadResult->headers()['Content-Disposition'] ?? null);
             self::assertSame('binary-body', $downloadResult->body());
 
+            $unsafeNameDownload = $this->captureResult(static fn () => $response->download($downloadFile, '../bad"' . "\r\n" . '.txt', 'text/plain'));
+            self::assertSame('attachment; filename="bad_.txt"', $unsafeNameDownload->headers()['Content-Disposition'] ?? null);
+
             $missingDownload = $this->captureResult(static fn () => $response->download('/definitely/missing/file.txt', 'missing.txt'));
             self::assertSame('', $missingDownload->body());
 
@@ -143,6 +146,8 @@ final class FrameworkCoverageIntegrationTest extends IntegrationTestCase
         } catch (HttpResultException $exception) {
             self::assertSame('/dashboard', $exception->result()->headers()['Location'] ?? null);
         }
+
+        $runMiddleware->invoke($router, ['permission:admin.users,requests.view_own']);
     }
 
     public function testViewAndViewContextCoverLayoutPartialAndErrorBranches(): void

@@ -32,7 +32,7 @@ final class IdCardController
         ];
 
         $students = $this->students->search($filters);
-        if ($this->auth->primaryRole() === 'student') {
+        if ($this->usesOwnIdCardScope()) {
             $students = array_values(array_filter($students, fn (array $student): bool => $student['email'] === ($this->auth->user()['email'] ?? '')));
         }
 
@@ -120,12 +120,17 @@ final class IdCardController
      */
     private function authorizeCardAccess(array $student, string $action): void
     {
-        if (!$this->auth->can('id_cards.view')) {
+        if (!$this->auth->can('id_cards.view') && !$this->auth->can('id_cards.view_own')) {
             $this->response->redirect('/dashboard', 'You are not authorized to access this resource.', 'error');
         }
 
-        if ($this->auth->primaryRole() === 'student' && $student['email'] !== ($this->auth->user()['email'] ?? '')) {
+        if ($this->usesOwnIdCardScope() && $student['email'] !== ($this->auth->user()['email'] ?? '')) {
             $this->response->redirect('/id-cards', 'You can only ' . $action . '.', 'error');
         }
+    }
+
+    private function usesOwnIdCardScope(): bool
+    {
+        return $this->auth->can('id_cards.view_own') && !$this->auth->can('id_cards.view');
     }
 }

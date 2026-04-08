@@ -64,25 +64,24 @@ final class AdminController
 
     public function updateUserRole(int $id): void
     {
-        $roles = strings_value($_POST['roles'] ?? []);
+        if ($this->users->find($id) === null) {
+            $this->response->view('partials/404', [], 404);
+        }
+
+        $role = trim(string_value($_POST['role'] ?? ''));
         $availableRoles = array_map(static fn (array $role): string => map_string($role, 'slug'), $this->roles->allRoles());
 
-        if ($roles === []) {
-            $this->response->redirect('/admin/users', 'Assign at least one role to the user.', 'error');
+        if ($role === '') {
+            $this->response->back('/admin/users', 'Select a role for the user.', 'error');
         }
 
-        foreach ($roles as $role) {
-            if (!in_array($role, $availableRoles, true)) {
-                $this->response->redirect('/admin/users', 'One of the selected roles is not valid.', 'error');
-            }
+        if (!in_array($role, $availableRoles, true)) {
+            $this->response->back('/admin/users', 'Selected role is not valid.', 'error');
         }
 
-        $primaryRole = $this->roles->primaryRoleSlug($roles);
-        usort($roles, static fn (string $left, string $right): int => $left === $primaryRole ? -1 : ($right === $primaryRole ? 1 : strcmp($left, $right)));
+        $this->users->updateRoles($id, [$role]);
 
-        $this->users->updateRoles($id, $roles);
-
-        $this->response->redirect('/admin/users', 'User roles updated successfully.');
+        $this->response->back('/admin/users', 'User role updated successfully.');
     }
 
     public function editUser(int $id): void
@@ -172,6 +171,41 @@ final class AdminController
         $matrix = $this->roles->permissionMatrix();
 
         $this->response->view('admin/roles', $matrix);
+    }
+
+    public function createRole(): void
+    {
+        [$errors, $data] = $this->roleFormData();
+
+        if ($errors !== []) {
+            $this->response->back('/admin/roles', implode(' ', $errors), 'error');
+        }
+
+        if ($this->roles->slugExists($data['slug'])) {
+            $this->response->back('/admin/roles', 'Role slug already exists.', 'error');
+        }
+
+        $this->roles->createRole($data['slug'], $data['name'], $data['description']);
+
+        $this->response->redirect('/admin/roles', 'Role created successfully.');
+    }
+
+    public function updateRole(string $slug): void
+    {
+        $role = $this->roles->findBySlug($slug);
+        if ($role === null) {
+            $this->response->redirect('/admin/roles', 'Role was not found.', 'error');
+        }
+
+        [$errors, $data] = $this->roleFormData(false);
+
+        if ($errors !== []) {
+            $this->response->back('/admin/roles', implode(' ', $errors), 'error');
+        }
+
+        $this->roles->updateRole($slug, $data['name'], $data['description']);
+
+        $this->response->redirect('/admin/roles', 'Role updated successfully.');
     }
 
     public function syncRolePermissions(string $slug): void
@@ -297,5 +331,35 @@ final class AdminController
         }
 
         return $merged;
+    }
+
+    /**
+     * @return array{0: list<string>, 1: array{slug: string, name: string, description: string|null}}
+     */
+    private function roleFormData(bool $validateSlug = true): array
+    {
+        $name = trim(string_value($_POST['name'] ?? ''));
+        $slug = trim(string_value($_POST['slug'] ?? ''));
+        $description = nullable_string_value($_POST['description'] ?? null);
+        $description = $description === null ? null : trim($description);
+        $errors = [];
+
+        if ($name === '') {
+            $errors[] = 'Role name is required.';
+        }
+
+        if (!$validateSlug) {
+            $slug = '';
+        } elseif ($slug === '') {
+            $errors[] = 'Role slug is required.';
+        } elseif (preg_match('/^[a-z0-9][a-z0-9_-]{0,49}$/', $slug) !== 1) {
+            $errors[] = 'Role slug must use up to 50 lowercase letters, numbers, dashes, or underscores.';
+        }
+
+        return [$errors, [
+            'slug' => $slug,
+            'name' => $name,
+            'description' => $description === '' ? null : $description,
+        ]];
     }
 }

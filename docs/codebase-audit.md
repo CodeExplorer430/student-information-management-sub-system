@@ -6,7 +6,7 @@ This audit pass reviewed the current implementation against `project-requirement
 ## Confirmed Coverage
 - Student profile registration, update tracking, academic records, ID generation, dashboard, and dual-status tracking are implemented.
 - Major role boundaries are covered for admin, registrar, staff, faculty, and student users.
-- Configurable RBAC is now implemented through `roles`, `permissions`, and `role_permissions`, with admin screens for user-role assignment and permission-matrix updates.
+- Configurable RBAC is now implemented through `roles`, `permissions`, and `role_permissions`, with single-role admin assignment, immutable role slugs, and explicit own-only permissions for student-scoped access.
 - Student self-service request submission, registrar/staff queue handling, and reporting/export screens are now part of the active system scope.
 - Quality gates are in place through PHPUnit, Codeception, PHPStan, PHP CS Fixer, and Composer dependency audit.
 - SQL schema, seed scripts, and empty-database import snapshots exist as first-class project artifacts.

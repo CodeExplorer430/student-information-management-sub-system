@@ -47,12 +47,12 @@ $view->layout('layouts/base', [
                         <form id="user-role-form-<?= e($user['id'] ?? '') ?>" method="post" action="/admin/users/<?= e($user['id'] ?? '') ?>/role" class="d-grid gap-2">
                             <input type="hidden" name="_csrf" value="<?= e($csrf) ?>">
                             <input type="hidden" name="_back" value="/admin/users">
-                            <select name="roles[]" class="form-select form-select-sm" multiple size="<?= e(max(3, min(5, count($roles)))) ?>">
+                            <select name="role" class="form-select form-select-sm">
                                 <?php foreach ($roles as $role): ?>
-                                    <option value="<?= e($role['slug']) ?>" <?= in_array($role['slug'], $user['roles'], true) ? 'selected' : '' ?>><?= e($role['name']) ?></option>
+                                    <option value="<?= e($role['slug']) ?>" <?= selected($user['role'] ?? '', $role['slug']) ?>><?= e($role['name']) ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <div class="small text-muted mt-1">Primary display role: <?= e($user['role']) ?></div>
+                            <div class="small text-muted mt-1">Options are loaded from the role registry.</div>
                         </form>
                     </td>
                     <td>
@@ -89,7 +89,7 @@ $view->layout('layouts/base', [
                     <td class="text-end">
                         <div class="d-inline-flex gap-2">
                             <a href="/admin/users/<?= e($user['id'] ?? '') ?>/edit" class="btn btn-sm btn-outline-primary">Edit account</a>
-                            <button class="btn btn-sm btn-primary" form="user-role-form-<?= e($user['id'] ?? '') ?>">Save roles</button>
+                            <button class="btn btn-sm btn-primary" form="user-role-form-<?= e($user['id'] ?? '') ?>">Save role</button>
                         </div>
                     </td>
                 </tr>

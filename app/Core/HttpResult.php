@@ -54,7 +54,7 @@ final class HttpResult
     {
         return new self(200, $body, array_merge([
             'Content-Type' => $contentType,
-            'Content-Disposition' => sprintf('attachment; filename="%s"', $fileName),
+            'Content-Disposition' => sprintf('attachment; filename="%s"', self::safeDownloadFileName($fileName)),
             'Content-Length' => (string) strlen($body),
         ], $headers));
     }
@@ -83,5 +83,14 @@ final class HttpResult
     public function withHeaders(array $headers): self
     {
         return new self($this->status, $this->body, array_merge($headers, $this->headers));
+    }
+
+    private static function safeDownloadFileName(string $fileName): string
+    {
+        $fileName = basename(str_replace(['\\', "\0"], '/', $fileName));
+        $fileName = preg_replace('/[\x00-\x1F\x7F"\r\n]+/', '_', $fileName) ?? '';
+        $fileName = trim($fileName, " .\t\n\r\0\x0B");
+
+        return $fileName !== '' ? $fileName : 'download';
     }
 }

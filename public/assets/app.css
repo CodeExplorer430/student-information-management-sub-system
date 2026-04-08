@@ -2629,6 +2629,20 @@ html[data-motion="reduced"] *::after {
     font-weight: 800;
 }
 
+.account-profile-card__avatar img {
+    object-fit: contain;
+    padding: 0.2rem;
+    background: #fff;
+}
+
+.account-form-fields input[type="file"] {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0.7rem;
+    line-height: 1.35;
+}
+
 .account-form-fields {
     min-width: 0;
 }
@@ -2739,6 +2753,147 @@ html[data-motion="reduced"] *::after {
     border: 1px solid rgba(30, 76, 147, 0.12);
     color: #244e86;
     font-weight: 700;
+}
+
+.role-management-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.role-management-panel,
+.role-permission-workspace {
+    min-width: 0;
+}
+
+.role-management-panel {
+    display: grid;
+    gap: 1rem;
+    padding-right: 1.25rem;
+    border-right: 1px solid rgba(214, 224, 235, 0.95);
+}
+
+.role-management-panel__header h3,
+.role-editor-form h3 {
+    margin: 0 0 0.35rem;
+    color: #173555;
+}
+
+.role-management-panel__header p,
+.role-editor-form p {
+    margin: 0;
+    color: #68798b;
+}
+
+.role-registry-table {
+    display: grid;
+    border: 1px solid rgba(214, 224, 235, 0.95);
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.role-registry-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.75rem;
+    align-items: center;
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border: 0;
+    border-bottom: 1px solid rgba(214, 224, 235, 0.95);
+    background: #fff;
+    color: #36536f;
+    text-align: left;
+}
+
+.role-registry-row:last-child {
+    border-bottom: 0;
+}
+
+.role-registry-row.is-active {
+    background: #eef7ff;
+    color: #123b66;
+}
+
+.role-registry-row strong,
+.role-registry-row small {
+    display: block;
+}
+
+.role-registry-row small {
+    color: #728397;
+    font-size: 0.78rem;
+}
+
+.role-registry-row > span:not(:first-child) {
+    color: #60758b;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.role-editor-form {
+    display: grid;
+    gap: 0.9rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(214, 224, 235, 0.95);
+}
+
+.role-editor-form--inline {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 1.25rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(214, 224, 235, 0.95);
+}
+
+.role-editor-form--inline .form-actions {
+    grid-column: 1 / -1;
+    margin-top: 0;
+}
+
+.role-permission-panel {
+    min-width: 0;
+}
+
+.role-permission-panel__header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.role-permission-panel__header h2 {
+    margin: 0.7rem 0 0.5rem;
+    font-size: 1.7rem;
+    color: #18314f;
+}
+
+.role-permission-panel__header p {
+    margin: 0;
+    color: #5d7085;
+    line-height: 1.6;
+}
+
+.role-permission-panel__meta {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.role-permission-panel__meta span {
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: rgba(31, 75, 143, 0.08);
+    color: #46627e;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.permission-module-table {
+    display: grid;
+    border-top: 1px solid rgba(214, 224, 235, 0.95);
 }
 
 .matrix-role-section,
@@ -3014,14 +3169,31 @@ html[data-motion="reduced"] *::after {
 @media (max-width: 1200px) {
     .diagnostic-summary-grid,
     .diagnostic-grid,
-    .diagnostic-grid--balanced {
+    .diagnostic-grid--balanced,
+    .role-management-grid {
         grid-template-columns: 1fr;
+    }
+
+    .role-management-panel {
+        padding-right: 0;
+        padding-bottom: 1rem;
+        border-right: 0;
+        border-bottom: 1px solid rgba(214, 224, 235, 0.95);
     }
 }
 
 @media (max-width: 900px) {
+    .role-registry-row,
     .matrix-permission-row {
         grid-template-columns: 1.1rem minmax(0, 1fr);
+    }
+
+    .role-registry-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .role-editor-form--inline {
+        grid-template-columns: 1fr;
     }
 
     .matrix-permission-row code {
