@@ -879,6 +879,9 @@ final class ViewTemplateCoverageIntegrationTest extends IntegrationTestCase
         self::assertStringContainsString('Download PNG', $previewHtml);
         self::assertStringContainsString('Record summary', $previewHtml);
         self::assertStringContainsString('Generated at 2026-04-03 12:00:00', $previewHtml);
+        self::assertStringContainsString('page-id-card-preview', $previewHtml);
+        self::assertStringContainsString('id-preview-primary', $previewHtml);
+        self::assertStringContainsString('data-print-trigger', $previewHtml);
         self::assertStringNotContainsString('generated-card-shell__canvas', $previewHtml);
     }
 }

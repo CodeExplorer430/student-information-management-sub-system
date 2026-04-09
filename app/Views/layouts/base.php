@@ -5,6 +5,7 @@
 /** @var string|null $title */
 /** @var string|null $pageTitle */
 /** @var string|null $pageDescription */
+/** @var string|null $pageBodyClass */
 /** @var \App\Core\ViewContext $view */
 
 $user = $app['user'];
@@ -12,6 +13,7 @@ $appName = $app['name'];
 $title = $title ?? $appName;
 $pageTitle = $pageTitle ?? $appName;
 $pageDescription = $pageDescription ?? 'Secure student profile operations.';
+$pageBodyClass = trim((string) ($pageBodyClass ?? ''));
 $content = $view->section('content');
 $authContent = $view->section('auth_content', $content);
 $role = $user !== null ? $user['role'] : '';
@@ -19,7 +21,8 @@ $userName = $user !== null ? $user['name'] : 'Guest';
 $currentPath = $current_path ?? '/';
 $permissions = $app['permissions'];
 $notificationUnreadCount = $app['notification_unread_count'];
-$bodyClass = $user !== null ? 'authenticated-shell role-' . preg_replace('/[^a-z0-9_-]+/i', '-', (string) $role) : 'guest-shell';
+$baseBodyClass = $user !== null ? 'authenticated-shell role-' . preg_replace('/[^a-z0-9_-]+/i', '-', (string) $role) : 'guest-shell';
+$bodyClass = trim($baseBodyClass . ' ' . $pageBodyClass);
 $userAvatar = $user !== null ? private_upload_data_uri(nullable_string_value($user['photo_path'] ?? null)) : '';
 
 $navItems = [

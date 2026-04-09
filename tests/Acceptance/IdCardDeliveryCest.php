@@ -21,6 +21,10 @@ final class IdCardDeliveryCest
             'student_id' => '1',
         ]);
         $I->see('Student ID preview');
+        $I->seeElement('body.page-id-card-preview');
+        $I->seeElement('.id-preview-primary');
+        $I->seeElement('button[data-print-trigger]');
+        $I->seeElement('.generated-card-shell img');
         $I->see('Bestlink College of the Philippines');
         $I->see('Ready for record checks.');
 

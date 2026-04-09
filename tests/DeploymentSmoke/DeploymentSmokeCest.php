@@ -62,6 +62,11 @@ final class DeploymentSmokeCest
             'student_id' => (string) $studentId,
         ]);
         $I->see('Student ID preview');
+        $I->seeElement('body.page-id-card-preview');
+        $I->seeElement('.id-preview-primary');
+        $I->seeElement('button[data-print-trigger]');
+        $I->seeElement('.generated-card-shell img');
+        $I->see('Download PNG');
 
         $I->amOnPage('/id-cards/' . $studentId . '/verify');
         $I->see('Verified Bestlink College student record');

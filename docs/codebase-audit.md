@@ -24,9 +24,10 @@ This audit pass reviewed the current implementation against `project-requirement
 ## Residual Risks / Technical Debt
 - The original Twig requirement remains an intentional deviation; the current renderer is native PHP views.
 - Final production validation is now expected to run through `bash scripts/deployment-smoke.sh` against the real Apache/XAMPP or production URL.
-- The shared UI polish pass is complete; future visual refinements are optional product polish rather than a functional gap.
+- The shared UI polish pass and the ID-card preview/print cleanup are complete; future visual refinements are optional product polish rather than a functional gap.
 - The app now self-hosts framework assets; any remaining runtime validation gap is operational execution of the smoke flow against the intended deployment target.
 
 ## Latest Validation
-- The latest local validation after the shared UI polish and database import documentation pass completed successfully through `composer check`.
+- The latest local validation on April 9, 2026 after the ID-card layout and print-preview pass completed successfully through `COMPOSER_PROCESS_TIMEOUT=0 composer check`.
 - The gate covered PHP CS Fixer dry-run, PHPStan, PHPUnit coverage at `100%` for classes, methods, and lines, Codeception acceptance tests, and Composer dependency audit.
+- Deployment smoke coverage now also asserts the generated ID preview route exposes the print-target body class, primary preview container, print trigger, and rendered card image before QR verification is checked on the target environment.

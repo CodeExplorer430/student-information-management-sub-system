@@ -9,6 +9,10 @@ namespace App\Services {
             return false;
         }
 
+        if ($function === 'imagettfbbox' && array_key_exists('__sims_services_imagettfbbox_exists', $GLOBALS)) {
+            return (bool) $GLOBALS['__sims_services_imagettfbbox_exists'];
+        }
+
         if ($function === 'imagettftext' && array_key_exists('__sims_services_imagettftext_exists', $GLOBALS)) {
             return (bool) $GLOBALS['__sims_services_imagettftext_exists'];
         }
@@ -193,6 +197,81 @@ namespace Tests\Integration {
             }
 
             self::assertSame(200, imagesx($canvas));
+        }
+
+        public function testDrawBaseCardAndQrCodeUseUpdatedFooterAndCaptionAnchors(): void
+        {
+            $service = $this->app->get(IdCardService::class);
+            $createCanvas = new ReflectionMethod(IdCardService::class, 'createCanvas');
+            $createCanvas->setAccessible(true);
+            $drawBaseCard = new ReflectionMethod(IdCardService::class, 'drawBaseCard');
+            $drawBaseCard->setAccessible(true);
+            $drawQrCode = new ReflectionMethod(IdCardService::class, 'drawQrCode');
+            $drawQrCode->setAccessible(true);
+            $footerBadgeLayout = new ReflectionMethod(IdCardService::class, 'footerBadgeLayout');
+            $footerBadgeLayout->setAccessible(true);
+            $measureTextWidth = new ReflectionMethod(IdCardService::class, 'measureTextWidth');
+            $measureTextWidth->setAccessible(true);
+
+            $GLOBALS['__sims_services_file_exists'] = [
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf' => true,
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' => true,
+            ];
+            $GLOBALS['__sims_services_imagettftext_exists'] = true;
+            $GLOBALS['__sims_services_fake_bbox'] = [0, 0, 64, 0, 64, -10, 0, -10];
+            $GLOBALS['__sims_services_fake_ttf'] = true;
+            $GLOBALS['__sims_services_fake_ttf_calls'] = [];
+
+            /** @var \GdImage $canvas */
+            $canvas = $createCanvas->invoke($service);
+
+            try {
+                /** @var array<string, int> $layout */
+                $layout = $footerBadgeLayout->invoke($service, 'ACTIVE', 'APPROVED');
+
+                $drawBaseCard->invoke($service, $canvas, [
+                    'first_name' => 'Aira',
+                    'last_name' => 'Mendoza',
+                    'student_number' => 'BSI-2026-1001',
+                    'program' => 'BS Information Technology',
+                    'department' => 'BSIT',
+                    'year_level' => 3,
+                    'enrollment_status' => 'Active',
+                    'latest_status' => 'Approved',
+                    'photo_path' => '',
+                ]);
+                $drawQrCode->invoke($service, $canvas, '{"verify":"http://127.0.0.1/id-cards/1/verify"}');
+
+                /** @var array<int, array{0:int, 1:int, 2:string}> $calls */
+                $calls = $GLOBALS['__sims_services_fake_ttf_calls'];
+
+                $GLOBALS['__sims_services_imagettfbbox_exists'] = false;
+
+                self::assertSame(950, $layout['workflow_badge_x2']);
+                self::assertSame(130, $layout['right_margin']);
+                self::assertSame(118, $layout['enrollment_badge_width']);
+                self::assertSame(140, $layout['workflow_badge_width']);
+                self::assertSame(18, $layout['badge_gap']);
+                self::assertSame(24, $layout['gap_after_footer']);
+                self::assertSame(660, $layout['footer_right']);
+                self::assertSame(
+                    imagefontwidth(5) * strlen('APPROVED'),
+                    $measureTextWidth->invoke($service, 'APPROVED', 8, true)
+                );
+                self::assertContains([701, 611, 'ACTIVE'], $calls);
+                self::assertContains([848, 611, 'APPROVED'], $calls);
+                self::assertContains([847, 566, 'Scan to verify'], $calls);
+            } finally {
+                imagedestroy($canvas);
+                unset(
+                    $GLOBALS['__sims_services_file_exists'],
+                    $GLOBALS['__sims_services_imagettfbbox_exists'],
+                    $GLOBALS['__sims_services_imagettftext_exists'],
+                    $GLOBALS['__sims_services_fake_bbox'],
+                    $GLOBALS['__sims_services_fake_ttf'],
+                    $GLOBALS['__sims_services_fake_ttf_calls']
+                );
+            }
         }
     }
 }
