@@ -44,6 +44,8 @@ The strict quality gate now enforces `100%` PHPUnit coverage for lines, methods,
 
 Latest local validation after the shared UI polish and database import documentation pass completed successfully through `composer check`, including PHP CS Fixer dry-run, PHPStan, PHPUnit coverage at `100%` for classes, methods, and lines, Codeception acceptance coverage, and Composer dependency audit.
 
+Latest local validation on April 9, 2026 after the ID-card layout and print-preview updates completed successfully through `COMPOSER_PROCESS_TIMEOUT=0 composer check`, including PHP CS Fixer dry-run, PHPStan, PHPUnit coverage at `100%` for classes, methods, and lines, Codeception acceptance coverage, and Composer dependency audit.
+
 ### Currently covered
 - login success, invalid-CSRF rejection, and protected-route guest redirects
 - faculty academic-record access and denial from restricted modules
@@ -53,13 +55,14 @@ Latest local validation after the shared UI polish and database import documenta
 - workflow and enrollment transition persistence
 - workflow filtering and timeline rendering
 - student ownership boundaries across profiles, records, statuses, and ID preview
-- ID generation, generated-state listing, preview, download, missing-file handling, and verification
+- ID generation, generated-state listing, preview, print-only preview shell cleanup, download, missing-file handling, and verification
 - request-center submission, queue review, role-matrix access, admin user management, and reporting-screen access
 - request note creation, notification persistence, and notification-report exports
 - backend role aggregation, single-role admin assignment, immutable role slugs, and own-only permission behavior
 - direct assertions on response security headers
 - session cookie naming and SameSite / HttpOnly / secure-policy configuration
 - validator behavior and repository search baseline
+- deployment smoke coverage for generated-ID preview shell hooks before QR verification
 
 ### Remaining explicit gaps
 - No local functional requirement gaps remain in the implemented modules

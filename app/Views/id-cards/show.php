@@ -9,10 +9,11 @@ $view->layout('layouts/base', [
     'title' => 'ID Card Preview | ' . $appName,
     'pageTitle' => 'Student ID Preview',
     'pageDescription' => $student['first_name'] . ' ' . $student['last_name'] . ' • ' . $student['student_number'],
+    'pageBodyClass' => 'page-id-card-preview',
 ]);
 ?>
 <?php $view->start('content'); ?>
-<section class="module-panel module-panel--amber">
+<section class="module-panel module-panel--amber id-preview-page">
     <div class="module-panel__header">
         <div>
             <div class="section-pill">Student ID Preview</div>
@@ -27,7 +28,7 @@ $view->layout('layouts/base', [
     </div>
 
     <div class="id-preview-grid">
-        <div>
+        <div class="id-preview-primary">
             <div class="generated-card-shell">
                 <img src="data:image/png;base64,<?= e($card['image_data'] ?? '') ?>" alt="Generated student ID" class="img-fluid rounded shadow">
             </div>

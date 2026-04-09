@@ -3475,3 +3475,67 @@ html[data-contrast="high"] .dashboard-summary-card {
         max-width: 100%;
     }
 }
+
+@media print {
+    @page {
+        margin: 10mm;
+    }
+
+    html,
+    body.page-id-card-preview {
+        background: #fff !important;
+    }
+
+    body.page-id-card-preview .overlay,
+    body.page-id-card-preview .sidebar,
+    body.page-id-card-preview .top-bar,
+    body.page-id-card-preview .app-toast-stack,
+    body.page-id-card-preview .accessibility-panel,
+    body.page-id-card-preview .module-panel__header,
+    body.page-id-card-preview .id-preview-aside,
+    body.page-id-card-preview .generated-card-meta {
+        display: none !important;
+    }
+
+    body.page-id-card-preview .app-shell--tabler,
+    body.page-id-card-preview .main-content,
+    body.page-id-card-preview .content-container,
+    body.page-id-card-preview .page-transition,
+    body.page-id-card-preview .id-preview-grid,
+    body.page-id-card-preview .id-preview-primary {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    body.page-id-card-preview .main-content {
+        margin-left: 0 !important;
+    }
+
+    body.page-id-card-preview .id-preview-page,
+    body.page-id-card-preview .generated-card-shell {
+        background: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+    }
+
+    body.page-id-card-preview .generated-card-shell img {
+        display: block;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        margin: 0 auto !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    body.page-id-card-preview .page-transition {
+        animation: none !important;
+    }
+}

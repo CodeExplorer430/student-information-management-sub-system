@@ -66,6 +66,95 @@ final class IdCardServiceIntegrationTest extends IntegrationTestCase
         self::assertSame('student-id-2.png', $result['file_name']);
     }
 
+    public function testGenerateKeepsFooterStatusBadgesSeparatedFromIdentityStrip(): void
+    {
+        $service = $this->app->get(IdCardService::class);
+        $result = $service->generate(1, 5);
+        $image = imagecreatefrompng($result['absolute_path']);
+
+        self::assertInstanceOf(\GdImage::class, $image);
+
+        try {
+            $footerFill = 0x132848;
+            $surfaceFill = 0xF6F9FC;
+            $activeFill = 0x28A745;
+            $approvedFill = 0x298078;
+            $gapPosition = null;
+            $activeBadgePosition = null;
+            $approvedBadgePosition = null;
+            $approvedBadgeRightEdge = null;
+
+            for ($x = 640; $x <= 1030; $x++) {
+                $color = imagecolorat($image, $x, 604) & 0xFFFFFF;
+
+                if ($gapPosition === null && $color === $surfaceFill) {
+                    $gapPosition = $x;
+                }
+
+                if ($gapPosition !== null && $activeBadgePosition === null && $color === $activeFill) {
+                    $activeBadgePosition = $x;
+                }
+
+                if ($activeBadgePosition !== null && $approvedBadgePosition === null && $color === $approvedFill) {
+                    $approvedBadgePosition = $x;
+                }
+
+                if ($color === $approvedFill) {
+                    $approvedBadgeRightEdge = $x;
+                }
+            }
+
+            self::assertSame($footerFill, imagecolorat($image, 640, 604) & 0xFFFFFF);
+            self::assertNotNull($gapPosition);
+            self::assertNotNull($activeBadgePosition);
+            self::assertNotNull($approvedBadgePosition);
+            self::assertNotNull($approvedBadgeRightEdge);
+            self::assertGreaterThanOrEqual(660, $gapPosition);
+            self::assertGreaterThan($gapPosition, $activeBadgePosition);
+            self::assertGreaterThan($activeBadgePosition, $approvedBadgePosition);
+            self::assertLessThanOrEqual(950, $approvedBadgeRightEdge);
+        } finally {
+            imagedestroy($image);
+        }
+    }
+
+    public function testGenerateKeepsQrCodeBelowVerificationHeading(): void
+    {
+        $service = $this->app->get(IdCardService::class);
+        $result = $service->generate(1, 5);
+        $image = imagecreatefrompng($result['absolute_path']);
+
+        self::assertInstanceOf(\GdImage::class, $image);
+
+        try {
+            $surfaceFill = 0xFFFFFF;
+            $qrDarkFill = 0x000000;
+            $headingToQrGapIsClear = true;
+            $qrStartsAt = null;
+
+            for ($y = 467; $y <= 473; $y++) {
+                if ((imagecolorat($image, 879, $y) & 0xFFFFFF) !== $surfaceFill) {
+                    $headingToQrGapIsClear = false;
+                    break;
+                }
+            }
+
+            for ($y = 474; $y <= 553; $y++) {
+                if ((imagecolorat($image, 879, $y) & 0xFFFFFF) === $qrDarkFill) {
+                    $qrStartsAt = $y;
+                    break;
+                }
+            }
+
+            self::assertTrue($headingToQrGapIsClear);
+            self::assertNotNull($qrStartsAt);
+            self::assertGreaterThanOrEqual(474, $qrStartsAt);
+            self::assertSame($surfaceFill, imagecolorat($image, 812, 562) & 0xFFFFFF);
+        } finally {
+            imagedestroy($image);
+        }
+    }
+
     public function testPrivateHelpersCoverTextSizingCropPathsAndFallbacks(): void
     {
         $service = $this->app->get(IdCardService::class);

@@ -152,12 +152,50 @@ final class IdCardService
         $this->drawRoundedBorder($canvas, 776, 436, 982, 576, 20, $panelBorder, 2);
         $this->drawText($canvas, 'Verification QR', 11, 806, 466, $muted, true);
 
-        $this->fillRoundedRectangle($canvas, 748, 592, 844, 622, 14, $green);
-        $this->fillRoundedRectangle($canvas, 856, 592, 958, 622, 14, $teal);
-        $this->drawText($canvas, strtoupper((string) ($student['enrollment_status'] ?? 'Active')), 8, 796, 611, $white, true, 'center');
-        $this->drawText($canvas, strtoupper((string) ($student['latest_status'] ?? 'Pending')), 8, 907, 611, $white, true, 'center');
+        $enrollmentLabel = strtoupper((string) ($student['enrollment_status'] ?? 'Active'));
+        $workflowLabel = strtoupper((string) ($student['latest_status'] ?? 'Pending'));
+        $footerLayout = $this->footerBadgeLayout($enrollmentLabel, $workflowLabel);
 
-        $this->fillRoundedRectangle($canvas, 74, 588, 760, 628, 20, $navy);
+        $this->fillRoundedRectangle(
+            $canvas,
+            $footerLayout['enrollment_badge_x1'],
+            $footerLayout['badge_top'],
+            $footerLayout['enrollment_badge_x2'],
+            $footerLayout['badge_top'] + $footerLayout['badge_height'],
+            $footerLayout['badge_radius'],
+            $green
+        );
+        $this->fillRoundedRectangle(
+            $canvas,
+            $footerLayout['workflow_badge_x1'],
+            $footerLayout['badge_top'],
+            $footerLayout['workflow_badge_x2'],
+            $footerLayout['badge_top'] + $footerLayout['badge_height'],
+            $footerLayout['badge_radius'],
+            $teal
+        );
+        $this->drawText(
+            $canvas,
+            $enrollmentLabel,
+            $footerLayout['badge_label_size'],
+            $footerLayout['enrollment_label_center_x'],
+            611,
+            $white,
+            true,
+            'center'
+        );
+        $this->drawText(
+            $canvas,
+            $workflowLabel,
+            $footerLayout['badge_label_size'],
+            $footerLayout['workflow_label_center_x'],
+            611,
+            $white,
+            true,
+            'center'
+        );
+
+        $this->fillRoundedRectangle($canvas, 74, 588, $footerLayout['footer_right'], 628, 20, $navy);
         $this->drawText($canvas, $this->truncate(trim((string) (($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? ''))), 28), 20, 102, 610, $white, true);
         $this->drawText($canvas, $this->truncate((string) ($student['program'] ?? ''), 48), 11, 102, 625, $this->allocateColor($canvas, 217, 227, 238), false);
 
@@ -250,12 +288,12 @@ final class IdCardService
         $qrImage = $qrRenderer->render($payload);
 
         if ($qrImage instanceof \GdImage) {
-            imagecopyresampled($canvas, $qrImage, 840, 466, 0, 0, 80, 80, imagesx($qrImage), imagesy($qrImage));
+            imagecopyresampled($canvas, $qrImage, 839, 474, 0, 0, 80, 80, imagesx($qrImage), imagesy($qrImage));
             imagedestroy($qrImage);
         }
 
         $muted = $this->allocateColor($canvas, 90, 104, 120);
-        $this->drawText($canvas, 'Scan to verify', 8, 879, 560, $muted, false, 'center');
+        $this->drawText($canvas, 'Scan to verify', 8, 879, 566, $muted, false, 'center');
     }
 
     private function drawBarcode(\GdImage $canvas, string $payload): void
@@ -327,15 +365,11 @@ final class IdCardService
         $font = $this->fontPath($bold);
 
         if ($font !== null && function_exists('imagettftext')) {
-            $bounds = imagettfbbox($size, 0, $font, $text);
-            if (is_array($bounds)) {
-                /** @var array{0: float|int, 2: float|int} $bounds */
-                $width = (int) abs($bounds[2] - $bounds[0]);
-                if ($align === 'center') {
-                    $x -= (int) round($width / 2);
-                } elseif ($align === 'right') {
-                    $x -= $width;
-                }
+            $width = $this->measureTextWidth($text, $size, $bold);
+            if ($align === 'center') {
+                $x -= (int) round($width / 2);
+            } elseif ($align === 'right') {
+                $x -= $width;
             }
 
             imagettftext($canvas, $size, 0, $x, $y, $color, $font, $text);
@@ -344,6 +378,80 @@ final class IdCardService
         }
 
         imagestring($canvas, $bold ? 5 : 4, $x, $y - 14, $text, $color);
+    }
+
+    private function measureTextWidth(string $text, int $size, bool $bold): int
+    {
+        $font = $this->fontPath($bold);
+
+        if ($font !== null && function_exists('imagettfbbox')) {
+            $bounds = imagettfbbox($size, 0, $font, $text);
+            if (is_array($bounds)) {
+                /** @var array{0: float|int, 2: float|int} $bounds */
+                return (int) abs($bounds[2] - $bounds[0]);
+            }
+        }
+
+        return imagefontwidth($bold ? 5 : 4) * strlen($text);
+    }
+
+    /**
+     * @return array{
+     *     badge_height:int,
+     *     badge_label_size:int,
+     *     badge_gap:int,
+     *     badge_radius:int,
+     *     badge_right:int,
+     *     badge_top:int,
+     *     enrollment_badge_x1:int,
+     *     enrollment_badge_x2:int,
+     *     enrollment_badge_width:int,
+     *     enrollment_label_center_x:int,
+     *     footer_right:int,
+     *     gap_after_footer:int,
+     *     right_margin:int,
+     *     workflow_badge_x1:int,
+     *     workflow_badge_x2:int,
+     *     workflow_badge_width:int,
+     *     workflow_label_center_x:int
+     * }
+     */
+    private function footerBadgeLayout(string $enrollmentLabel, string $workflowLabel): array
+    {
+        $badgeHeight = 32;
+        $badgeLabelSize = 8;
+        $badgeRadius = 14;
+        $badgeGap = 18;
+        $badgeRight = self::CARD_WIDTH - 130;
+        $enrollmentBadgeWidth = 118;
+        $workflowBadgeWidth = 140;
+
+        $workflowBadgeX2 = $badgeRight;
+        $workflowBadgeX1 = $workflowBadgeX2 - $workflowBadgeWidth;
+        $enrollmentBadgeX2 = $workflowBadgeX1 - $badgeGap;
+        $enrollmentBadgeX1 = $enrollmentBadgeX2 - $enrollmentBadgeWidth;
+        $gapAfterFooter = 24;
+        $footerRight = max(660, $enrollmentBadgeX1 - $gapAfterFooter);
+
+        return [
+            'badge_height' => $badgeHeight,
+            'badge_label_size' => $badgeLabelSize,
+            'badge_gap' => $badgeGap,
+            'badge_radius' => $badgeRadius,
+            'badge_right' => $badgeRight,
+            'badge_top' => 590,
+            'enrollment_badge_x1' => $enrollmentBadgeX1,
+            'enrollment_badge_x2' => $enrollmentBadgeX2,
+            'enrollment_badge_width' => $enrollmentBadgeWidth,
+            'enrollment_label_center_x' => $enrollmentBadgeX1 + (int) round($enrollmentBadgeWidth / 2),
+            'footer_right' => $footerRight,
+            'gap_after_footer' => $gapAfterFooter,
+            'right_margin' => self::CARD_WIDTH - $badgeRight,
+            'workflow_badge_x1' => $workflowBadgeX1,
+            'workflow_badge_x2' => $workflowBadgeX2,
+            'workflow_badge_width' => $workflowBadgeWidth,
+            'workflow_label_center_x' => $workflowBadgeX1 + (int) round($workflowBadgeWidth / 2),
+        ];
     }
 
     private function fontPath(bool $bold): ?string

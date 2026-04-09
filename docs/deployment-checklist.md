@@ -111,9 +111,12 @@ Create these secrets in each environment:
   - login-page security headers
   - session cookie policy
   - `X-Request-Id`
-  - authenticated smoke coverage for admin and student flows
+  - authenticated smoke coverage for admin and student flows, including generated-ID preview hooks and QR verification
 - Configure the smoke credentials through GitHub Environment secrets, not in
   the repo.
+- After the automated smoke step, manually confirm the `/id-cards/[id]/print`
+  browser print preview renders only the card artifact and not the full
+  authenticated shell.
 - Review `storage/logs/app.log` and `/admin/diagnostics` after smoke failures.
 
 ## Troubleshooting
